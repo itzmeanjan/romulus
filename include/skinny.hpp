@@ -49,6 +49,14 @@ constexpr uint8_t RC[ROUNDS] = {
   0x1C, 0x38, 0x31, 0x23, 0x06, 0x0D, 0x1B, 0x36, 0x2D, 0x1A
 };
 
+// Permutation P_T applied on all (three) tweakey arrays during application of
+// `AddRoundtweakey` routine
+//
+// See figure 2.3 of Romulus specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+constexpr uint8_t P_T[16] = { 9, 15, 8, 13, 10, 14, 12, 11,
+                              0, 1,  2, 3,  4,  5,  6,  7 };
+
 // Skinny-128-384+ tweakable block cipher ( TBC ) state, where both internal
 // state of 128 -bit & tweakey state of 384 -bit are maintained as four 4x4 byte
 // matrices
@@ -58,26 +66,26 @@ constexpr uint8_t RC[ROUNDS] = {
 struct state
 {
   uint8_t is[16];  // 128 -bit internal state
-  uint8_t tk1[16]; // first 128 -bit of 384 -bit tweaky state
-  uint8_t tk2[16]; // middle 128 -bit of 384 -bit tweaky state
-  uint8_t tk3[16]; // last 128 -bit of 384 -bit tweaky state
+  uint8_t tk1[16]; // first 128 -bit of 384 -bit tweakey state
+  uint8_t tk2[16]; // middle 128 -bit of 384 -bit tweakey state
+  uint8_t tk3[16]; // last 128 -bit of 384 -bit tweakey state
 };
 
-// Initialize both internal state and tweaky state of Skinny-128-384+ TBC
+// Initialize both internal state and tweakey state of Skinny-128-384+ TBC
 //
 // See section 2.3 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
 inline static void
-initialize(state* const __restrict st,            // TBC state
-           const uint8_t* const __restrict p_txt, // 16 -bytes plain text
-           const uint8_t* const __restrict tweaky // 48 -bytes tweaky input
+initialize(state* const __restrict st,             // TBC state
+           const uint8_t* const __restrict p_txt,  // 16 -bytes plain text
+           const uint8_t* const __restrict tweakey // 48 -bytes tweakey input
 )
 {
   std::memcpy(st->is, p_txt, 16);
 
-  std::memcpy(st->tk1, tweaky + 0, 16);
-  std::memcpy(st->tk2, tweaky + 16, 16);
-  std::memcpy(st->tk3, tweaky + 32, 16);
+  std::memcpy(st->tk1, tweakey + 0, 16);
+  std::memcpy(st->tk2, tweakey + 16, 16);
+  std::memcpy(st->tk3, tweakey + 32, 16);
 }
 
 // Substitutes cells of TBC internal state by applying 8 -bit Sbox
@@ -107,6 +115,72 @@ add_constants(state* const __restrict st, const size_t r_idx)
   st->is[0] ^= c0;
   st->is[4] ^= c1;
   st->is[8] ^= c2;
+}
+
+// LFSR used to update each cell of first two rows of tweakey state (2)
+//
+// See table 2.2 of
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+inline static uint8_t
+tk2_lfsr(const uint8_t cell)
+{
+  const uint8_t x5 = (cell >> 5) & 0b1;
+  const uint8_t x7 = (cell >> 7) & 0b1;
+
+  return ((cell & 0b01111111) << 1) | (x7 ^ x5);
+}
+
+// LFSR used to update each cell of first two rows of tweakey state (3)
+//
+// See table 2.2 of
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+inline static uint8_t
+tk3_lfsr(const uint8_t cell)
+{
+  const uint8_t x0 = (cell >> 0) & 0b1;
+  const uint8_t x6 = (cell >> 6) & 0b1;
+
+  return ((x0 ^ x6) << 7) | ((cell & 0b11111110) >> 1);
+}
+
+// First two rows of all tweakey state arrays are extracted and added into
+// internal state's first two rows & then tweakey states are updated by applying
+// permutation and LFSR
+//
+// See definition of `AddRoundTweakey` routine in section 2.3 of Romulus
+// specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+inline static void
+add_round_tweakey(state* const __restrict st)
+{
+  for (size_t i = 0; i < 8; i++) {
+    st->is[i] ^= (st->tk1[i] ^ st->tk2[i] ^ st->tk3[i]);
+  }
+
+  uint8_t tmp[16];
+
+  for (size_t i = 0; i < 16; i++) {
+    tmp[i] = st->tk1[P_T[i]];
+  }
+  std::memcpy(st->tk1, tmp, 16);
+
+  for (size_t i = 0; i < 16; i++) {
+    tmp[i] = st->tk2[P_T[i]];
+  }
+  std::memcpy(st->tk2, tmp, 16);
+
+  for (size_t i = 0; i < 16; i++) {
+    tmp[i] = st->tk3[P_T[i]];
+  }
+  std::memcpy(st->tk3, tmp, 16);
+
+  for (size_t i = 0; i < 8; i++) {
+    st->tk2[i] = tk2_lfsr(st->tk2[i]);
+  }
+
+  for (size_t i = 0; i < 8; i++) {
+    st->tk3[i] = tk3_lfsr(st->tk3[i]);
+  }
 }
 
 }
