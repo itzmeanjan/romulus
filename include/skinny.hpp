@@ -1,9 +1,15 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 
 // Skinny-128-384+ Tweakable Block Cipher
 namespace skinny {
+
+// Skinny-128-384+ TBC number of rounds, see section 2.3 of Romulus
+// specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+constexpr size_t ROUNDS = 40;
 
 // Pre-computed 8 -bit Sbox for Skinny-128-384+, taken from table 2.1 of
 // Romulus specification
@@ -32,6 +38,15 @@ constexpr uint8_t S8[256] = {
   0x77, 0x5f, 0x7f, 0xa2, 0x18, 0xae, 0x16, 0x1f, 0xa7, 0x17, 0xaf, 0x01, 0xb2,
   0x0e, 0xbe, 0x07, 0xb7, 0x0f, 0xbf, 0xe2, 0xca, 0xee, 0xc6, 0xcf, 0xe7, 0xc7,
   0xef, 0xd2, 0xf2, 0xde, 0xfe, 0xd7, 0xf7, 0xdf, 0xff
+};
+
+// Round constants taken from table in page 10 of Romulus specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+constexpr uint8_t RC[ROUNDS] = {
+  0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3E, 0x3D, 0x3B, 0x37, 0x2F,
+  0x1E, 0x3C, 0x39, 0x33, 0x27, 0x0E, 0x1D, 0x3A, 0x35, 0x2B,
+  0x16, 0x2C, 0x18, 0x30, 0x21, 0x02, 0x05, 0x0B, 0x17, 0x2E,
+  0x1C, 0x38, 0x31, 0x23, 0x06, 0x0D, 0x1B, 0x36, 0x2D, 0x1A
 };
 
 // Skinny-128-384+ tweakable block cipher ( TBC ) state, where both internal
@@ -70,11 +85,28 @@ initialize(state* const __restrict st,            // TBC state
 // See section 2.3 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
 inline static void
-subcells(state* const __restrict st)
+sub_cells(state* const __restrict st)
 {
   for (size_t i = 0; i < 16; i++) {
     st->is[i] = S8[st->is[i]];
   }
+}
+
+// Add round constants to first column of internal state of TBC
+//
+// See definition of `AddConstants` routine in section 2.3 of Romulus
+// specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+inline static void
+add_constants(state* const __restrict st, const size_t r_idx)
+{
+  const uint8_t c0 = RC[r_idx] & 0x0f;
+  const uint8_t c1 = (RC[r_idx] >> 4) & 0b11;
+  constexpr uint8_t c2 = 0x02;
+
+  st->is[0] ^= c0;
+  st->is[4] ^= c1;
+  st->is[8] ^= c2;
 }
 
 }
