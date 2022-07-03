@@ -5,6 +5,9 @@ IFLAGS = -I ./include
 
 all: benchmark
 
+lib:
+	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(IFLAGS) -fPIC --shared wrapper/romulus.cpp -o wrapper/libromulus.so
+
 clean:
 	find . -name '*.out' -o -name '*.o' -o -name '*.so' -o -name '*.gch' | xargs rm -rf
 
