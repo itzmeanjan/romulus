@@ -41,3 +41,7 @@ def romulush(msg: bytes) -> bytes:
 
     digest_ = digest.tobytes()
     return digest_
+
+
+if __name__ == '__main__':
+    print('Use `romulus` as library module')
