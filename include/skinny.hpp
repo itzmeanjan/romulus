@@ -183,4 +183,30 @@ add_round_tweakey(state* const __restrict st)
   }
 }
 
+// Rotates last three rows of internal state array of TBC, by factor
+// of {1, 2, 3} respectively
+//
+// See definition of `ShiftRows` routine in section 2.3 of Romulus specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+static inline void
+shift_rows(state* const __restrict st)
+{
+  uint8_t tmp[4];
+
+  for (size_t i = 0; i < 4; i++) {
+    tmp[i] = st->is[4 ^ (((4 ^ i) + 3) & 3)];
+  }
+  std::memcpy(st->is + 4, tmp, 4);
+
+  for (size_t i = 0; i < 4; i++) {
+    tmp[i] = st->is[8 ^ (((8 ^ i) + 2) & 3)];
+  }
+  std::memcpy(st->is + 8, tmp, 4);
+
+  for (size_t i = 0; i < 4; i++) {
+    tmp[i] = st->is[12 ^ (((12 ^ i) + 1) & 3)];
+  }
+  std::memcpy(st->is + 12, tmp, 4);
+}
+
 }
