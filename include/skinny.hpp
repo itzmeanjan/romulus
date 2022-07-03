@@ -5,7 +5,7 @@
 // Skinny-128-384+ Tweakable Block Cipher
 namespace skinny {
 
-// Pre-computed 8 -bit S-box for Skinny-128-384+, taken from table 2.1 of
+// Pre-computed 8 -bit Sbox for Skinny-128-384+, taken from table 2.1 of
 // Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
 //
@@ -63,6 +63,18 @@ initialize(state* const __restrict st,            // TBC state
   std::memcpy(st->tk1, tweaky + 0, 16);
   std::memcpy(st->tk2, tweaky + 16, 16);
   std::memcpy(st->tk3, tweaky + 32, 16);
+}
+
+// Substitutes cells of TBC internal state by applying 8 -bit Sbox
+//
+// See section 2.3 of Romulus specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+inline static void
+subcells(state* const __restrict st)
+{
+  for (size_t i = 0; i < 16; i++) {
+    st->is[i] = S8[st->is[i]];
+  }
 }
 
 }
