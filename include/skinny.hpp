@@ -209,4 +209,49 @@ shift_rows(state* const __restrict st)
   std::memcpy(st->is + 12, tmp, 4);
 }
 
+// Multiply each column ( dimension 4x1 ) of internal state array with binary
+// matrix M, as defined in section 2.3 of Romulus specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+static inline void
+mix_columns(state* const __restrict st)
+{
+  uint8_t tmp[4];
+
+  for (size_t i = 0; i < 4; i++) {
+    tmp[i] = st->is[(i << 2) ^ 0];
+  }
+
+  st->is[0] = tmp[0] + tmp[2] + tmp[3];
+  st->is[4] = tmp[0];
+  st->is[8] = tmp[1] + tmp[2];
+  st->is[12] = tmp[0] + tmp[2];
+
+  for (size_t i = 0; i < 4; i++) {
+    tmp[i] = st->is[(i << 2) ^ 1];
+  }
+
+  st->is[1] = tmp[0] + tmp[2] + tmp[3];
+  st->is[5] = tmp[0];
+  st->is[9] = tmp[1] + tmp[2];
+  st->is[13] = tmp[0] + tmp[2];
+
+  for (size_t i = 0; i < 4; i++) {
+    tmp[i] = st->is[(i << 2) ^ 2];
+  }
+
+  st->is[2] = tmp[0] + tmp[2] + tmp[3];
+  st->is[6] = tmp[0];
+  st->is[10] = tmp[1] + tmp[2];
+  st->is[14] = tmp[0] + tmp[2];
+
+  for (size_t i = 0; i < 4; i++) {
+    tmp[i] = st->is[(i << 2) ^ 3];
+  }
+
+  st->is[3] = tmp[0] + tmp[2] + tmp[3];
+  st->is[7] = tmp[0];
+  st->is[11] = tmp[1] + tmp[2];
+  st->is[15] = tmp[0] + tmp[2];
+}
+
 }
