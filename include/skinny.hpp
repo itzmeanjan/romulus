@@ -254,4 +254,26 @@ mix_columns(state* const __restrict st)
   st->is[15] = tmp[0] + tmp[2];
 }
 
+// A single round of Skinny-128-384+ tweakable block cipher
+inline static void
+round(state* const __restrict st, const size_t r_idx)
+{
+  sub_cells(st);
+  add_constants(st, r_idx);
+  add_round_tweakey(st);
+  shift_rows(st);
+  mix_columns(st);
+}
+
+// Skinny-128-384+ tweakable block cipher with 40 rounds, see section 2.3 of
+// Romulus specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+inline static void
+tbc(state* const __restrict st)
+{
+  for (size_t i = 0; i < ROUNDS; i++) {
+    round(st, i);
+  }
+}
+
 }
