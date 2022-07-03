@@ -1,15 +1,14 @@
 #pragma once
+#include <benchmark/benchmark.h>
+
 #include "skinny.hpp"
 #include "utils.hpp"
-#include <benchmark/benchmark.h>
 
 // Benchmark Romulus AEAD/ Hash routines on CPU
 namespace bench_romulus {
 
 // Benchmarks Skinny-128-384+ tweakable block cipher on CPU
-static void
-skinny_tbc(benchmark::State& state)
-{
+static void skinny_tbc(benchmark::State& state) {
   constexpr size_t N = 16;
   constexpr size_t T = 3 * N;
 
@@ -35,4 +34,4 @@ skinny_tbc(benchmark::State& state)
   std::free(key);
 }
 
-}
+}  // namespace bench_romulus

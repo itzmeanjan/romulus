@@ -6,9 +6,7 @@
 #include <sstream>
 
 // Generates N -many random bytes | N >= 0
-static inline void
-random_data(uint8_t* const data, const size_t len)
-{
+static inline void random_data(uint8_t* const data, const size_t len) {
   std::random_device rd;
   std::mt19937_64 gen(rd());
   std::uniform_int_distribution<uint8_t> dis;
@@ -20,9 +18,8 @@ random_data(uint8_t* const data, const size_t len)
 
 // Given a bytearray of length N, this function converts it to human readable
 // hex string of length N << 1
-static inline const std::string
-to_hex(const uint8_t* const bytes, const size_t len)
-{
+static inline const std::string to_hex(const uint8_t* const bytes,
+                                       const size_t len) {
   std::stringstream ss;
   ss << std::hex;
 
