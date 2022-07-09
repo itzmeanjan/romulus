@@ -35,4 +35,23 @@ inline static void update_lfsr(uint8_t* const lfsr) {
   lfsr[6] = (lfsr[6] << 1) ^ tmp;
 }
 
+// Tweakey encoding for Romulus-{N, M, T}, which computes 384 -bit tweakey, to
+// be used as input to Skinny-128-384+ TBC
+//
+// See page 13 of Romulus specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+inline static void encode(
+    const uint8_t* const __restrict key,      // 128 -bit key
+    const uint8_t* const __restrict tweak,    // 128 -bit twaek
+    const uint8_t* const __restrict counter,  // 56 -bit LFSR counter
+    const uint8_t d_sep,                      // 8 -bit domain seperator
+    uint8_t* const __restrict tweakey         // 384 -bit tweakey ( computed )
+) {
+  std::memcpy(tweakey, counter, 7);
+  std::memcpy(tweakey + 7, &d_sep, 1);
+  std::memset(tweakey + 8, 0, 8);
+  std::memcpy(tweakey + 16, tweak, 16);
+  std::memcpy(tweakey + 32, key, 16);
+}
+
 }  // namespace romulus_common
