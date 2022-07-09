@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 
@@ -52,6 +53,58 @@ inline static void encode(
   std::memset(tweakey + 8, 0, 8);
   std::memcpy(tweakey + 16, tweak, 16);
   std::memcpy(tweakey + 32, key, 16);
+}
+
+// State update function for Romulus-{N, M}, as defined in section 2.4.2 of
+// Romulus specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+inline static void rho(
+    uint8_t* const __restrict state,      // 128 -bit state ( gets updated )
+    const uint8_t* const __restrict txt,  // 128 -bit message block
+    uint8_t* const __restrict cipher      // 128 -bit cipher block
+) {
+  uint8_t gs[16];
+
+  for (size_t i = 0; i < 16; i++) {
+    const uint8_t b0 = state[i] >> 7;
+    const uint8_t b7 = state[i] & 1;
+
+    gs[i] = (state[i] << 1) | (b7 ^ b0);
+  }
+
+  for (size_t i = 0; i < 16; i++) {
+    cipher[i] = txt[i] ^ gs[i];
+  }
+
+  for (size_t i = 0; i < 16; i++) {
+    state[i] ^= txt[i];
+  }
+}
+
+// Inverse state update function for Romulus-{N, M}, as defined in section 2.4.2
+// of Romulus specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+inline static void rho_inv(
+    uint8_t* const __restrict state,         // 128 -bit state ( gets updated )
+    const uint8_t* const __restrict cipher,  // 128 -bit cipher block
+    uint8_t* const __restrict txt            // 128 -bit message block
+) {
+  uint8_t gs[16];
+
+  for (size_t i = 0; i < 16; i++) {
+    const uint8_t b0 = state[i] >> 7;
+    const uint8_t b7 = state[i] & 1;
+
+    gs[i] = (state[i] << 1) | (b7 ^ b0);
+  }
+
+  for (size_t i = 0; i < 16; i++) {
+    txt[i] = cipher[i] ^ gs[i];
+  }
+
+  for (size_t i = 0; i < 16; i++) {
+    state[i] ^= txt[i];
+  }
 }
 
 }  // namespace romulus_common
