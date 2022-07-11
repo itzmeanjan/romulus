@@ -13,6 +13,7 @@ wget -O romulus.zip https://csrc.nist.gov/CSRC/media/Projects/lightweight-crypto
 unzip romulus.zip
 
 cp romulus/Implementations/crypto_aead/romulush/LWC_HASH_KAT_256.txt ../
+cp romulus/Implementations/crypto_aead/romulusn/LWC_AEAD_KAT_128_128.txt ../
 
 popd
 
@@ -20,6 +21,7 @@ popd
 
 rm -rf tmp
 mv LWC_HASH_KAT_256.txt wrapper/python/
+mv LWC_AEAD_KAT_128_128.txt wrapper/python/
 
 # ---
 

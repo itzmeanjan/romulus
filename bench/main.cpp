@@ -1,3 +1,4 @@
+#include "bench_aead.hpp"
 #include "bench_hash.hpp"
 #include "bench_skinny.hpp"
 
@@ -12,6 +13,22 @@ BENCHMARK(bench_romulus::romulush)->Arg(512);
 BENCHMARK(bench_romulus::romulush)->Arg(1024);
 BENCHMARK(bench_romulus::romulush)->Arg(2048);
 BENCHMARK(bench_romulus::romulush)->Arg(4096);
+
+// register Romulus-N AEAD routines for benchmark
+BENCHMARK(bench_romulus::romulusn_encrypt)->Args({32, 64});
+BENCHMARK(bench_romulus::romulusn_decrypt)->Args({32, 64});
+BENCHMARK(bench_romulus::romulusn_encrypt)->Args({32, 128});
+BENCHMARK(bench_romulus::romulusn_decrypt)->Args({32, 128});
+BENCHMARK(bench_romulus::romulusn_encrypt)->Args({32, 256});
+BENCHMARK(bench_romulus::romulusn_decrypt)->Args({32, 256});
+BENCHMARK(bench_romulus::romulusn_encrypt)->Args({32, 512});
+BENCHMARK(bench_romulus::romulusn_decrypt)->Args({32, 512});
+BENCHMARK(bench_romulus::romulusn_encrypt)->Args({32, 1024});
+BENCHMARK(bench_romulus::romulusn_decrypt)->Args({32, 1024});
+BENCHMARK(bench_romulus::romulusn_encrypt)->Args({32, 2048});
+BENCHMARK(bench_romulus::romulusn_decrypt)->Args({32, 2048});
+BENCHMARK(bench_romulus::romulusn_encrypt)->Args({32, 4096});
+BENCHMARK(bench_romulus::romulusn_decrypt)->Args({32, 4096});
 
 // benchmark runner main function
 BENCHMARK_MAIN();

@@ -12,7 +12,7 @@ clean:
 	find . -name '*.out' -o -name '*.o' -o -name '*.so' -o -name '*.gch' | xargs rm -rf
 
 format:
-	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i --style=Google
+	find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i --style=Google && python3 -m black wrapper/python/*.py
 
 test_kat:
 	bash test_kat.sh
