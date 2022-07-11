@@ -92,10 +92,10 @@ inline static void rho_inv(
   uint8_t gs[16];
 
   for (size_t i = 0; i < 16; i++) {
-    const uint8_t b0 = state[i] >> 7;
-    const uint8_t b7 = state[i] & 1;
+    const uint8_t b7 = state[i] >> 7;
+    const uint8_t b0 = state[i] & 1;
 
-    gs[i] = (state[i] << 1) | (b7 ^ b0);
+    gs[i] = ((b7 ^ b0) << 7) | (state[i] >> 1);
   }
 
   for (size_t i = 0; i < 16; i++) {
