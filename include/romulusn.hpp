@@ -332,6 +332,7 @@ inline static bool decrypt(
     flg |= static_cast<bool>(tag[i] ^ tag_[i]);
   }
 
+  std::memset(txt, 0, flg * ctlen);
   return !flg;
 }
 
