@@ -20,9 +20,17 @@ static void get_auth_block(
 ) {
   std::memset(blk, 0, 16);
 
+  const size_t tmp0 = dlen & 15ul;
+  const size_t tmp1 = ctlen & 15ul;
+
+  const bool flg0 = (dlen == 0) | (tmp0 > 0ul);
+  const bool flg1 = (ctlen == 0) | (tmp1 > 0ul);
+
   const size_t off = blk_idx << 4;
-  const size_t padded_dlen = dlen + (16ul - (dlen & 15ul));
-  const size_t padded_ctlen = ctlen + (16ul - (ctlen & 15ul));
+
+  const size_t padded_dlen = dlen + (16ul - tmp0) * flg0;
+  const size_t padded_ctlen = ctlen + (16ul - tmp1) * flg1;
+
   const size_t padded_authlen = padded_dlen + padded_ctlen;
 
   if (off < padded_dlen) {
@@ -88,8 +96,8 @@ static void encrypt(
 
     uint8_t w = 48;
 
-    w ^= 2 * (ad_rm_bytes < 16ul);
-    w ^= 1 * (ct_rm_bytes < 16ul);
+    w ^= 2 * flg0;
+    w ^= 1 * flg1;
     w ^= 8 * (1 - (tot_ad_blk_cnt & 1));
     w ^= 4 * (1 - (tot_ct_blk_cnt & 1));
 
@@ -287,8 +295,8 @@ static bool decrypt(
 
     uint8_t w = 48;
 
-    w ^= 2 * (ad_rm_bytes < 16ul);
-    w ^= 1 * (ct_rm_bytes < 16ul);
+    w ^= 2 * flg0;
+    w ^= 1 * flg1;
     w ^= 8 * (1 - (tot_ad_blk_cnt & 1));
     w ^= 4 * (1 - (tot_ct_blk_cnt & 1));
 
