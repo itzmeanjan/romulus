@@ -37,9 +37,9 @@ def romulush(msg: bytes) -> bytes:
     digest = np.empty(32, dtype=u8)
 
     args = [uint8_tp, len_t, uint8_tp]
-    SO_LIB.romulush.argtypes = args
+    SO_LIB.romulus_hash.argtypes = args
 
-    SO_LIB.romulush(msg_, m_len, digest)
+    SO_LIB.romulus_hash(msg_, m_len, digest)
 
     digest_ = digest.tobytes()
     return digest_

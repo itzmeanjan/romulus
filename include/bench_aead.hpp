@@ -3,7 +3,7 @@
 
 #include <cassert>
 
-#include "aead.hpp"
+#include "romulusn.hpp"
 #include "utils.hpp"
 
 // Benchmark Romulus AEAD/ Hash routines on CPU
@@ -35,7 +35,7 @@ static void romulusn_encrypt(benchmark::State &state) {
   std::memset(dec, 0, ctlen);
 
   for (auto _ : state) {
-    romulus::encrypt_romulusn(key, nonce, data, dlen, txt, enc, ctlen, tag);
+    romulusn::encrypt(key, nonce, data, dlen, txt, enc, ctlen, tag);
 
     benchmark::DoNotOptimize(enc);
     benchmark::DoNotOptimize(tag);
@@ -43,7 +43,7 @@ static void romulusn_encrypt(benchmark::State &state) {
   }
 
   bool f = false;
-  f = romulus::decrypt_romulusn(key, nonce, tag, data, dlen, enc, dec, ctlen);
+  f = romulusn::decrypt(key, nonce, tag, data, dlen, enc, dec, ctlen);
   assert(f);
 
   for (size_t i = 0; i < ctlen; i++) {
@@ -89,11 +89,11 @@ static void romulusn_decrypt(benchmark::State &state) {
   std::memset(enc, 0, ctlen);
   std::memset(dec, 0, ctlen);
 
-  romulus::encrypt_romulusn(key, nonce, data, dlen, txt, enc, ctlen, tag);
+  romulusn::encrypt(key, nonce, data, dlen, txt, enc, ctlen, tag);
 
   for (auto _ : state) {
     bool f = false;
-    f = romulus::decrypt_romulusn(key, nonce, tag, data, dlen, enc, dec, ctlen);
+    f = romulusn::decrypt(key, nonce, tag, data, dlen, enc, dec, ctlen);
 
     benchmark::DoNotOptimize(f);
     benchmark::DoNotOptimize(dec);

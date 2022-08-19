@@ -1,8 +1,8 @@
 #pragma once
 #include "skinny.hpp"
 
-// Romulus Authenticated Encryption and Hash Function
-namespace romulus {
+// Romulus Hash Function
+namespace romulush {
 
 // 32 -bytes input message compression function, used in Romulus-H hash
 // function, where message is consumed into two 128 -bit states ( i.e. denoted
@@ -81,4 +81,4 @@ inline static void hash(
   std::memcpy(dig + 16, right, 16);
 }
 
-}  // namespace romulus
+}  // namespace romulush

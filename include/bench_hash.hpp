@@ -1,7 +1,7 @@
 #pragma once
 #include <benchmark/benchmark.h>
 
-#include "hash.hpp"
+#include "romulush.hpp"
 #include "utils.hpp"
 
 // Benchmark Romulus AEAD/ Hash routines on CPU
@@ -19,7 +19,7 @@ static void romulush(benchmark::State& state) {
   random_data(msg, mlen);
 
   for (auto _ : state) {
-    romulus::hash(msg, mlen, dig);
+    romulush::hash(msg, mlen, dig);
 
     benchmark::DoNotOptimize(dig);
     benchmark::ClobberMemory();

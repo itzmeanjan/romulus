@@ -4,8 +4,8 @@
 #include "common.hpp"
 #include "skinny.hpp"
 
-// Romulus Authenticated Encryption and Hash Function
-namespace romulus {
+// Romulus-M Authenticated Encryption with Associated Data
+namespace romulusm {
 
 // Extract N-th message block ( 128 -bit wide ) from concatenated padded
 // associated data bytes and padded plain text bytes. Last block of both
@@ -52,7 +52,7 @@ static void get_auth_block(
 //
 // See encryption algorithm defined in figure 2.7 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-static void encrypt_romulusm(
+static void encrypt(
     const uint8_t* const __restrict key,    // 128 -bit secret key
     const uint8_t* const __restrict nonce,  // 128 -bit public message nonce
     const uint8_t* const __restrict data,   // N -bytes associated data
@@ -203,7 +203,7 @@ static void encrypt_romulusm(
 //
 // See decryption algorithm defined in figure 2.7 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-static bool decrypt_romulusm(
+static bool decrypt(
     const uint8_t* const __restrict key,     // 128 -bit secret key
     const uint8_t* const __restrict nonce,   // 128 -bit public message nonce
     const uint8_t* const __restrict tag,     // 128 -bit authentication tag
@@ -358,4 +358,4 @@ static bool decrypt_romulusm(
   return !flg;
 }
 
-}  // namespace romulus
+}  // namespace romulusm
