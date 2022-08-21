@@ -69,18 +69,22 @@ static void get_auth_block(
   const bool flg3 = off < tmp4;
 
   if ((boff < 32ul) && (flg2 & flg3)) {
+    constexpr size_t br0[]{32ul, 16ul};
+
     const size_t ctoff = off - padded_dlen;
-    const size_t read = std::min(32ul, ctlen - ctoff);
+    const size_t read = std::min(br0[boff >= 16ul], ctlen - ctoff);
 
     std::memcpy(blk + boff, cipher + ctoff, read);
 
-    const uint8_t br0[]{blk[15], static_cast<uint8_t>(read)};
-    const uint8_t br1[]{blk[31], static_cast<uint8_t>(read & 15ul)};
-    const uint8_t br2[]{blk[31], static_cast<uint8_t>(read)};
+    const uint8_t br1[]{blk[15], static_cast<uint8_t>(read)};
+    const uint8_t br2[]{blk[31], static_cast<uint8_t>(read & 15ul)};
 
-    blk[15] = br0[(boff < 16ul) & (read < 16ul)];
-    blk[31] = br1[(boff < 16ul) & (read > 16ul) & (read < 32ul)];
-    blk[31] = br2[(boff >= 16ul) & (read < 16ul)];
+    blk[15] = br1[(boff < 16ul) & (read < 16ul)];
+    blk[31] = br2[(boff < 16ul) & (read > 16ul) & (read < 32ul)];
+
+    const uint8_t br3[]{blk[31], static_cast<uint8_t>(read)};
+
+    blk[31] = br3[(boff >= 16ul) & (read < 16ul)];
 
     const size_t read_ = std::min(32ul, padded_ctlen - ctoff);
 
