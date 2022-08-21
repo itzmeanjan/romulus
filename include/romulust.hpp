@@ -246,4 +246,144 @@ static void encrypt(
   }
 }
 
+// Given 16 -bytes secret key, 16 -bytes public message nonce, 16 -bytes
+// authentication tag, N -bytes associated data and M -bytes encrypted text | N,
+// M >= 0, this routine computes M -bytes decrypted text and boolean
+// verification flag, using Romulus-T verified decryption algorithm, which is
+// leakage-resistant.
+//
+// See decryption algorithm defined in figure 2.9 of Romulus specification
+// https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
+static bool decrypt(const uint8_t* const __restrict key,
+                    const uint8_t* const __restrict nonce,
+                    const uint8_t* const __restrict tag,
+                    const uint8_t* const __restrict data, const size_t dlen,
+                    const uint8_t* const __restrict cipher,
+                    uint8_t* const __restrict text, const size_t ctlen) {
+  uint8_t state[16];
+  uint8_t tag_[16];
+  uint8_t lfsr[7];
+  uint8_t tweakey[48];
+
+  skinny::state st;
+
+  const size_t blk_cnt = ctlen >> 4;
+  const size_t rm_bytes = ctlen & 15ul;
+
+  const bool flg0 = rm_bytes > 0ul;
+  const size_t tot_blk_cnt = blk_cnt + 1ul * flg0;
+
+  romulus_common::set_lfsr(lfsr);
+
+  for (size_t i = 0; i < tot_blk_cnt; i++) {
+    romulus_common::update_lfsr(lfsr);
+  }
+
+  {
+    uint8_t left[16]{};
+    uint8_t right[16]{};
+    uint8_t blk[32]{};
+
+    std::memset(left, 0, sizeof(left));
+    std::memset(right, 0, sizeof(right));
+
+    const size_t tmp0 = dlen & 15ul;
+    const size_t tmp1 = ctlen & 15ul;
+
+    const size_t tmp2 = 16ul - tmp0;
+    const size_t tmp3 = 16ul - tmp1;
+
+    const bool flg0 = dlen > 0ul;
+    const bool flg1 = ctlen > 0ul;
+
+    const size_t padded_dlen = dlen + tmp2 * flg0;
+    const size_t padded_ctlen = ctlen + tmp3 * flg1;
+    const size_t padded_authlen = padded_dlen + padded_ctlen + 16ul + 7ul;
+
+    const size_t padded_blk_cnt = padded_authlen >> 5;
+    const size_t padded_rm_bytes = padded_authlen & 31ul;
+
+    const bool flg2 = padded_rm_bytes > 0ul;
+    const size_t tot_padded_blk_cnt = padded_blk_cnt + 1ul * flg2;
+
+    for (size_t i = 0; i < tot_padded_blk_cnt - 1ul; i++) {
+      get_auth_block(data, dlen, cipher, ctlen, nonce, lfsr, i, blk);
+      romulush::compress(left, right, blk);
+    }
+
+    left[0] ^= 0b00000010;
+
+    const size_t id = tot_padded_blk_cnt - 1ul;
+
+    get_auth_block(data, dlen, cipher, ctlen, nonce, lfsr, id, blk);
+    romulush::compress(left, right, blk);
+
+    std::memset(lfsr, 0, 7);
+
+    romulus_common::encode(key, right, lfsr, 68, tweakey);
+    skinny::initialize(&st, left, tweakey);
+    skinny::tbc(&st);
+
+    std::memcpy(tag_, st.is, 16);
+  }
+
+  bool flg1 = false;
+
+  for (size_t i = 0; i < 16; i++) {
+    flg1 |= static_cast<bool>(tag[i] ^ tag_[i]);
+  }
+
+  if (!flg1 & (ctlen > 0ul)) {
+    uint8_t blk[16];
+
+    std::memset(blk, 0, 16);
+    std::memset(lfsr, 0, 7);
+
+    romulus_common::encode(key, blk, lfsr, 66, tweakey);
+
+    skinny::initialize(&st, nonce, tweakey);
+    skinny::tbc(&st);
+
+    std::memcpy(state, st.is, 16);
+
+    romulus_common::set_lfsr(lfsr);
+
+    size_t off = 0ul;
+
+    for (size_t i = 0; i < tot_blk_cnt - 1ul; i++) {
+      romulus_common::encode(state, blk, lfsr, 64, tweakey);
+
+      skinny::initialize(&st, nonce, tweakey);
+      skinny::tbc(&st);
+
+      for (size_t j = 0; j < 16; j++) {
+        text[off + j] = cipher[off + j] ^ st.is[j];
+      }
+
+      romulus_common::encode(state, blk, lfsr, 65, tweakey);
+
+      skinny::initialize(&st, nonce, tweakey);
+      skinny::tbc(&st);
+
+      std::memcpy(state, st.is, 16);
+
+      off += 16ul;
+      romulus_common::update_lfsr(lfsr);
+    }
+
+    romulus_common::encode(state, blk, lfsr, 64, tweakey);
+
+    skinny::initialize(&st, nonce, tweakey);
+    skinny::tbc(&st);
+
+    const size_t read = ctlen - off;
+
+    for (size_t i = 0; i < read; i++) {
+      text[off + i] = cipher[off + i] ^ st.is[i];
+    }
+  }
+
+  return !flg1;
+}
+
 }  // namespace romulust
