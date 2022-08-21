@@ -4,8 +4,8 @@
 #include "common.hpp"
 #include "skinny.hpp"
 
-// Romulus Authenticated Encryption and Hash Function
-namespace romulus {
+// Romulus-N Authenticated Encryption with Associated Data
+namespace romulusn {
 
 // Given 16 -bytes secret key, 16 -bytes nonce, N -bytes associated data and M
 // -bytes plain text | N, M >= 0, this routine computes M -bytes encrypted text
@@ -14,7 +14,7 @@ namespace romulus {
 //
 // See encryption algorithm defined in figure 2.5 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-inline static void encrypt_romulusn(
+inline static void encrypt(
     const uint8_t* const __restrict key,    // 128 -bit secret key
     const uint8_t* const __restrict nonce,  // 128 -bit public message nonce
     const uint8_t* const __restrict data,   // N -bytes associated data
@@ -164,7 +164,7 @@ inline static void encrypt_romulusn(
 //
 // See decryption algorithm defined in figure 2.5 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-inline static bool decrypt_romulusn(
+inline static bool decrypt(
     const uint8_t* const __restrict key,     // 128 -bit secret key
     const uint8_t* const __restrict nonce,   // 128 -bit public message nonce
     const uint8_t* const __restrict tag,     // 128 -bit authentication tag
@@ -332,7 +332,8 @@ inline static bool decrypt_romulusn(
     flg |= static_cast<bool>(tag[i] ^ tag_[i]);
   }
 
+  std::memset(txt, 0, flg * ctlen);
   return !flg;
 }
 
-}  // namespace romulus
+}  // namespace romulusn
