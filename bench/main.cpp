@@ -46,5 +46,21 @@ BENCHMARK(bench_romulus::romulusm_decrypt)->Args({32, 2048});
 BENCHMARK(bench_romulus::romulusm_encrypt)->Args({32, 4096});
 BENCHMARK(bench_romulus::romulusm_decrypt)->Args({32, 4096});
 
+// register Romulus-T AEAD routines for benchmark
+BENCHMARK(bench_romulus::romulust_encrypt)->Args({32, 64});
+BENCHMARK(bench_romulus::romulust_decrypt)->Args({32, 64});
+BENCHMARK(bench_romulus::romulust_encrypt)->Args({32, 128});
+BENCHMARK(bench_romulus::romulust_decrypt)->Args({32, 128});
+BENCHMARK(bench_romulus::romulust_encrypt)->Args({32, 256});
+BENCHMARK(bench_romulus::romulust_decrypt)->Args({32, 256});
+BENCHMARK(bench_romulus::romulust_encrypt)->Args({32, 512});
+BENCHMARK(bench_romulus::romulust_decrypt)->Args({32, 512});
+BENCHMARK(bench_romulus::romulust_encrypt)->Args({32, 1024});
+BENCHMARK(bench_romulus::romulust_decrypt)->Args({32, 1024});
+BENCHMARK(bench_romulus::romulust_encrypt)->Args({32, 2048});
+BENCHMARK(bench_romulus::romulust_decrypt)->Args({32, 2048});
+BENCHMARK(bench_romulus::romulust_encrypt)->Args({32, 4096});
+BENCHMARK(bench_romulus::romulust_decrypt)->Args({32, 4096});
+
 // benchmark runner main function
 BENCHMARK_MAIN();
