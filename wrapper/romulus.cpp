@@ -1,6 +1,7 @@
 #include "romulush.hpp"
 #include "romulusm.hpp"
 #include "romulusn.hpp"
+#include "romulust.hpp"
 
 // Thin C wrapper on top of underlying C++ implementation of Romulus-N
 // authenticated encryption and Romulus-H hash function, which can be used for
@@ -49,6 +50,28 @@ void romulusm_encrypt(
 );
 
 bool romulusm_decrypt(
+    const uint8_t* const __restrict,  // 128 -bit secret key
+    const uint8_t* const __restrict,  // 128 -bit nonce
+    const uint8_t* const __restrict,  // 128 -bit authentication tag
+    const uint8_t* const __restrict,  // N -bytes associated data
+    const size_t,  // byte length of associated data = N | >= 0
+    const uint8_t* const __restrict,  // M -bytes encrypted text
+    uint8_t* const __restrict,        // M -bytes decrypted text
+    const size_t  // byte length of encrypted/ decrypted text = M | >= 0
+);
+
+void romulust_encrypt(
+    const uint8_t* const __restrict,  // 128 -bit secret key
+    const uint8_t* const __restrict,  // 128 -bit nonce
+    const uint8_t* const __restrict,  // N -bytes associated data
+    const size_t,  // byte length of associated data = N | >= 0
+    const uint8_t* const __restrict,  // M -bytes plain text
+    uint8_t* const __restrict,        // M -bytes encrypted text
+    const size_t,  // byte length of plain/ encrypted text = M | >= 0
+    uint8_t* const __restrict  // 128 -bit authentication tag
+);
+
+bool romulust_decrypt(
     const uint8_t* const __restrict,  // 128 -bit secret key
     const uint8_t* const __restrict,  // 128 -bit nonce
     const uint8_t* const __restrict,  // 128 -bit authentication tag
@@ -124,6 +147,33 @@ bool romulusm_decrypt(
     const size_t ctlen  // byte length of encrypted/ decrypted text = M | >= 0
 ) {
   using namespace romulusm;
+  return decrypt(key, nonce, tag, data, dlen, enc, txt, ctlen);
+}
+
+void romulust_encrypt(
+    const uint8_t* const __restrict key,    // 128 -bit secret key
+    const uint8_t* const __restrict nonce,  // 128 -bit nonce
+    const uint8_t* const __restrict data,   // N -bytes associated data
+    const size_t dlen,  // byte length of associated data = N | >= 0
+    const uint8_t* const __restrict txt,  // M -bytes plain text
+    uint8_t* const __restrict enc,        // M -bytes encrypted text
+    const size_t ctlen,  // byte length of plain/ encrypted text = M | >= 0
+    uint8_t* const __restrict tag  // 128 -bit authentication tag
+) {
+  romulust::encrypt(key, nonce, data, dlen, txt, enc, ctlen, tag);
+}
+
+bool romulust_decrypt(
+    const uint8_t* const __restrict key,    // 128 -bit secret key
+    const uint8_t* const __restrict nonce,  // 128 -bit nonce
+    const uint8_t* const __restrict tag,    // 128 -bit authentication tag
+    const uint8_t* const __restrict data,   // N -bytes associated data
+    const size_t dlen,  // byte length of associated data = N | >= 0
+    const uint8_t* const __restrict enc,  // M -bytes encrypted text
+    uint8_t* const __restrict txt,        // M -bytes decrypted text
+    const size_t ctlen  // byte length of encrypted/ decrypted text = M | >= 0
+) {
+  using namespace romulust;
   return decrypt(key, nonce, tag, data, dlen, enc, txt, ctlen);
 }
 }

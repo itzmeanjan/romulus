@@ -12,14 +12,13 @@ Variant | What does it do ?
 Romulus-H | Only cryptographic hash function offered by Romulus cipher suite
 Romulus-N | A nonce-based authenticated encryption with associated data scheme, which is the primary AEAD candidate of this cipher suite
 Romulus-M | A nonce misuse-resistant authenticated encryption with associated data scheme
+Romulus-T | A leakage-resistant authenticated encryption with associated data scheme
 
-> Romulus-T AEAD coming soon.
-
-### Romulus-H 
+### Romulus-H
 
 Given N -bytes input message, this algorithm computes 32 -bytes digest | N >= 0
 
-### Romulus-{N, M}
+### Romulus-{N, M, T}
 
 `encrypt`: Given 16 -bytes secret key, 16 -bytes public message nonce, N -bytes associated data & M -bytes plain text, the encryption algorithm computes M -bytes cipher text and 16 -bytes authentication tag
 
@@ -74,6 +73,12 @@ cmake version 3.23.2
 ```fish
 $ python3 --version
 Python 3.10.6
+
+$ wget --version
+GNU Wget 1.21.2 built on linux-gnu.
+
+$ unzip -v
+UnZip 6.00 of 20 April 2009, by Debian. Original by Info-ZIP.
 ```
 
 - Python dependencies can be downloaded using
@@ -90,7 +95,7 @@ For ensuring functional correctness of Romulus cipher suite implementation, I ma
 
 For Romulus-H, given input message bytes, I compute 32 -bytes digest using Romulus-H algorithm and check for correctness of computed digest, by comparing it against provided digests in KATs.
 
-While for Romulus-{N, M}, given 16 -bytes secret key, 16 -bytes public message nonce, plain text and associated data, I use Romulus-{N, M} encrypt routine for computing cipher text and 16 -bytes authentication tag, which I use for byte-by-byte comparison against KATs. Finally an attempt to decrypt back to plain text, using Romulus-{N, M} verified decryption algorithm, is also made. 
+While for Romulus-{N, M, T}, given 16 -bytes secret key, 16 -bytes public message nonce, plain text and associated data, I use Romulus-{N, M, T} encrypt routine for computing cipher text and 16 -bytes authentication tag, which I use for byte-by-byte comparison against KATs. Finally an attempt to decrypt back to plain text, using Romulus-{N, M, T} verified decryption algorithm, is also made. 
 
 For executing tests, issue
 
@@ -100,7 +105,7 @@ make
 
 ## Benchmarking
 
-For benchmarking Skinny-128-384+ tweakable block cipher, Romulus-H hash function and Romulus-{N, M} authenticated encryption/ verified decryption, issue
+For benchmarking Skinny-128-384+ tweakable block cipher, Romulus-H hash function and Romulus-{N, M, T} authenticated encryption/ verified decryption, issue
 
 ```fish
 make benchmark
@@ -111,59 +116,73 @@ make benchmark
 ### On ARM Cortex-A72
 
 ```fish
-2022-08-19T12:54:00+00:00
+2022-08-21T19:35:57+00:00
 Running ./bench/a.out
 Run on (16 X 166.66 MHz CPU s)
 CPU Caches:
   L1 Data 32 KiB (x16)
   L1 Instruction 48 KiB (x16)
   L2 Unified 2048 KiB (x4)
-Load Average: 0.13, 0.03, 0.01
+Load Average: 0.08, 0.02, 0.01
 --------------------------------------------------------------------------------------------------
 Benchmark                                        Time             CPU   Iterations UserCounters...
 --------------------------------------------------------------------------------------------------
-bench_romulus::skinny_tbc                     1877 ns         1877 ns       372974 bytes_per_second=8.13115M/s
-bench_romulus::romulush/64                   11357 ns        11357 ns        61614 bytes_per_second=5.37432M/s
-bench_romulus::romulush/128                  18930 ns        18929 ns        36980 bytes_per_second=6.44875M/s
-bench_romulus::romulush/256                  34063 ns        34062 ns        20551 bytes_per_second=7.16752M/s
-bench_romulus::romulush/512                  64333 ns        64331 ns        10881 bytes_per_second=7.59014M/s
-bench_romulus::romulush/1024                124863 ns       124862 ns         5606 bytes_per_second=7.82114M/s
-bench_romulus::romulush/2048                245931 ns       245930 ns         2846 bytes_per_second=7.9418M/s
-bench_romulus::romulush/4096                488111 ns       488088 ns         1434 bytes_per_second=8.00316M/s
-bench_romulus::romulusn_encrypt/32/64        11375 ns        11375 ns        61534 bytes_per_second=8.04845M/s
-bench_romulus::romulusn_decrypt/32/64        11529 ns        11528 ns        60708 bytes_per_second=7.94146M/s
-bench_romulus::romulusn_encrypt/32/128       18904 ns        18903 ns        37029 bytes_per_second=8.07199M/s
-bench_romulus::romulusn_decrypt/32/128       19159 ns        19159 ns        36536 bytes_per_second=7.96427M/s
-bench_romulus::romulusn_encrypt/32/256       33962 ns        33962 ns        20612 bytes_per_second=8.08731M/s
-bench_romulus::romulusn_decrypt/32/256       34421 ns        34420 ns        20335 bytes_per_second=7.97969M/s
-bench_romulus::romulusn_encrypt/32/512       64078 ns        64078 ns        10923 bytes_per_second=8.09637M/s
-bench_romulus::romulusn_decrypt/32/512       64953 ns        64951 ns        10777 bytes_per_second=7.98754M/s
-bench_romulus::romulusn_encrypt/32/1024     124310 ns       124309 ns         5631 bytes_per_second=8.10143M/s
-bench_romulus::romulusn_decrypt/32/1024     126006 ns       126005 ns         5555 bytes_per_second=7.99241M/s
-bench_romulus::romulusn_encrypt/32/2048     244779 ns       244778 ns         2860 bytes_per_second=8.10386M/s
-bench_romulus::romulusn_decrypt/32/2048     248110 ns       248109 ns         2821 bytes_per_second=7.99505M/s
-bench_romulus::romulusn_encrypt/32/4096     485795 ns       485786 ns         1441 bytes_per_second=8.10391M/s
-bench_romulus::romulusn_decrypt/32/4096     492380 ns       492368 ns         1422 bytes_per_second=7.99558M/s
-bench_romulus::romulusm_encrypt/32/64        15249 ns        15249 ns        45904 bytes_per_second=6.00398M/s
-bench_romulus::romulusm_decrypt/32/64        15282 ns        15282 ns        45804 bytes_per_second=5.99094M/s
-bench_romulus::romulusm_encrypt/32/128       26662 ns        26662 ns        26260 bytes_per_second=5.72315M/s
-bench_romulus::romulusm_decrypt/32/128       26671 ns        26670 ns        26246 bytes_per_second=5.72135M/s
-bench_romulus::romulusm_encrypt/32/256       49471 ns        49470 ns        14150 bytes_per_second=5.552M/s
-bench_romulus::romulusm_decrypt/32/256       49446 ns        49446 ns        14157 bytes_per_second=5.55475M/s
-bench_romulus::romulusm_encrypt/32/512       95100 ns        95098 ns         7360 bytes_per_second=5.45539M/s
-bench_romulus::romulusm_decrypt/32/512       95001 ns        95000 ns         7368 bytes_per_second=5.46101M/s
-bench_romulus::romulusm_encrypt/32/1024     186354 ns       186353 ns         3756 bytes_per_second=5.40415M/s
-bench_romulus::romulusm_decrypt/32/1024     186104 ns       186103 ns         3761 bytes_per_second=5.4114M/s
-bench_romulus::romulusm_encrypt/32/2048     368877 ns       368874 ns         1898 bytes_per_second=5.37756M/s
-bench_romulus::romulusm_decrypt/32/2048     368325 ns       368322 ns         1900 bytes_per_second=5.38562M/s
-bench_romulus::romulusm_encrypt/32/4096     733971 ns       733966 ns          954 bytes_per_second=5.36369M/s
-bench_romulus::romulusm_decrypt/32/4096     732837 ns       732832 ns          955 bytes_per_second=5.37199M/s
+bench_romulus::skinny_tbc                     1877 ns         1877 ns       372911 bytes_per_second=8.13129M/s
+bench_romulus::romulush/64                   11355 ns        11355 ns        61615 bytes_per_second=5.3753M/s
+bench_romulus::romulush/128                  18930 ns        18930 ns        36979 bytes_per_second=6.44864M/s
+bench_romulus::romulush/256                  34062 ns        34062 ns        20550 bytes_per_second=7.16753M/s
+bench_romulus::romulush/512                  64327 ns        64325 ns        10880 bytes_per_second=7.59079M/s
+bench_romulus::romulush/1024                124866 ns       124865 ns         5606 bytes_per_second=7.82094M/s
+bench_romulus::romulush/2048                245944 ns       245939 ns         2846 bytes_per_second=7.94151M/s
+bench_romulus::romulush/4096                488113 ns       488103 ns         1434 bytes_per_second=8.00293M/s
+bench_romulus::romulusn_encrypt/32/64        11376 ns        11376 ns        61524 bytes_per_second=8.04781M/s
+bench_romulus::romulusn_decrypt/32/64        11537 ns        11537 ns        60672 bytes_per_second=7.93561M/s
+bench_romulus::romulusn_encrypt/32/128       18905 ns        18905 ns        37025 bytes_per_second=8.07114M/s
+bench_romulus::romulusn_decrypt/32/128       19170 ns        19169 ns        36516 bytes_per_second=7.96012M/s
+bench_romulus::romulusn_encrypt/32/256       33965 ns        33964 ns        20610 bytes_per_second=8.08675M/s
+bench_romulus::romulusn_decrypt/32/256       34432 ns        34432 ns        20329 bytes_per_second=7.97678M/s
+bench_romulus::romulusn_encrypt/32/512       64263 ns        64262 ns        10891 bytes_per_second=8.07316M/s
+bench_romulus::romulusn_decrypt/32/512       65139 ns        65136 ns        10747 bytes_per_second=7.96484M/s
+bench_romulus::romulusn_encrypt/32/1024     124318 ns       124314 ns         5631 bytes_per_second=8.10109M/s
+bench_romulus::romulusn_decrypt/32/1024     126018 ns       126015 ns         5555 bytes_per_second=7.99172M/s
+bench_romulus::romulusn_encrypt/32/2048     245061 ns       245059 ns         2857 bytes_per_second=8.09454M/s
+bench_romulus::romulusn_decrypt/32/2048     248121 ns       248119 ns         2821 bytes_per_second=7.99471M/s
+bench_romulus::romulusn_encrypt/32/4096     486000 ns       485996 ns         1440 bytes_per_second=8.1004M/s
+bench_romulus::romulusn_decrypt/32/4096     492365 ns       492356 ns         1422 bytes_per_second=7.99578M/s
+bench_romulus::romulusm_encrypt/32/64        15250 ns        15249 ns        45902 bytes_per_second=6.00368M/s
+bench_romulus::romulusm_decrypt/32/64        15283 ns        15283 ns        45806 bytes_per_second=5.9906M/s
+bench_romulus::romulusm_encrypt/32/128       26657 ns        26656 ns        26260 bytes_per_second=5.72426M/s
+bench_romulus::romulusm_decrypt/32/128       26673 ns        26672 ns        26244 bytes_per_second=5.7208M/s
+bench_romulus::romulusm_encrypt/32/256       49472 ns        49471 ns        14150 bytes_per_second=5.55189M/s
+bench_romulus::romulusm_decrypt/32/256       49449 ns        49448 ns        14156 bytes_per_second=5.55446M/s
+bench_romulus::romulusm_encrypt/32/512       95198 ns        95197 ns         7356 bytes_per_second=5.44975M/s
+bench_romulus::romulusm_decrypt/32/512       95258 ns        95257 ns         7350 bytes_per_second=5.44632M/s
+bench_romulus::romulusm_encrypt/32/1024     186362 ns       186360 ns         3756 bytes_per_second=5.40394M/s
+bench_romulus::romulusm_decrypt/32/1024     186121 ns       186116 ns         3761 bytes_per_second=5.41105M/s
+bench_romulus::romulusm_encrypt/32/2048     369156 ns       369146 ns         1896 bytes_per_second=5.3736M/s
+bench_romulus::romulusm_decrypt/32/2048     368342 ns       368335 ns         1900 bytes_per_second=5.38543M/s
+bench_romulus::romulusm_encrypt/32/4096     734220 ns       734207 ns          953 bytes_per_second=5.36193M/s
+bench_romulus::romulusm_decrypt/32/4096     732788 ns       732783 ns          955 bytes_per_second=5.37235M/s
+bench_romulus::romulust_encrypt/32/64        35990 ns        35989 ns        19449 bytes_per_second=2.54391M/s
+bench_romulus::romulust_decrypt/32/64        35956 ns        35955 ns        19469 bytes_per_second=2.5463M/s
+bench_romulus::romulust_encrypt/32/128       58657 ns        58656 ns        11933 bytes_per_second=2.60139M/s
+bench_romulus::romulust_decrypt/32/128       58612 ns        58610 ns        11942 bytes_per_second=2.60342M/s
+bench_romulus::romulust_encrypt/32/256      104050 ns       104048 ns         6731 bytes_per_second=2.63973M/s
+bench_romulus::romulust_decrypt/32/256      103927 ns       103924 ns         6735 bytes_per_second=2.64287M/s
+bench_romulus::romulust_encrypt/32/512      194876 ns       194872 ns         3593 bytes_per_second=2.66225M/s
+bench_romulus::romulust_decrypt/32/512      194550 ns       194546 ns         3595 bytes_per_second=2.66671M/s
+bench_romulus::romulust_encrypt/32/1024     376029 ns       376016 ns         1862 bytes_per_second=2.67829M/s
+bench_romulus::romulust_decrypt/32/1024     375810 ns       375800 ns         1863 bytes_per_second=2.67983M/s
+bench_romulus::romulust_encrypt/32/2048     738817 ns       738804 ns          947 bytes_per_second=2.68494M/s
+bench_romulus::romulust_decrypt/32/2048     738279 ns       738274 ns          948 bytes_per_second=2.68686M/s
+bench_romulus::romulust_encrypt/32/4096    1464244 ns      1464199 ns          478 bytes_per_second=2.68868M/s
+bench_romulus::romulust_decrypt/32/4096    1463337 ns      1463297 ns          478 bytes_per_second=2.69034M/s
 ```
 
 ### On AWS Graviton3
 
 ```fish
-2022-08-19T12:51:08+00:00
+2022-08-21T19:37:45+00:00
 Running ./bench/a.out
 Run on (64 X 2100 MHz CPU s)
 CPU Caches:
@@ -171,52 +190,66 @@ CPU Caches:
   L1 Instruction 64 KiB (x64)
   L2 Unified 1024 KiB (x64)
   L3 Unified 32768 KiB (x1)
-Load Average: 0.07, 0.02, 0.00
+Load Average: 0.00, 0.00, 0.00
 --------------------------------------------------------------------------------------------------
 Benchmark                                        Time             CPU   Iterations UserCounters...
 --------------------------------------------------------------------------------------------------
-bench_romulus::skinny_tbc                     1544 ns         1544 ns       453409 bytes_per_second=9.88404M/s
-bench_romulus::romulush/64                    9348 ns         9348 ns        74864 bytes_per_second=6.52952M/s
-bench_romulus::romulush/128                  15575 ns        15575 ns        44950 bytes_per_second=7.8377M/s
-bench_romulus::romulush/256                  28023 ns        28022 ns        24977 bytes_per_second=8.71238M/s
-bench_romulus::romulush/512                  52923 ns        52921 ns        13226 bytes_per_second=9.22665M/s
-bench_romulus::romulush/1024                102740 ns       102738 ns         6814 bytes_per_second=9.50537M/s
-bench_romulus::romulush/2048                202330 ns       202325 ns         3459 bytes_per_second=9.65339M/s
-bench_romulus::romulush/4096                401557 ns       401545 ns         1743 bytes_per_second=9.72805M/s
-bench_romulus::romulusn_encrypt/32/64         9375 ns         9375 ns        74703 bytes_per_second=9.76566M/s
-bench_romulus::romulusn_decrypt/32/64         9401 ns         9401 ns        74483 bytes_per_second=9.73868M/s
-bench_romulus::romulusn_encrypt/32/128       15586 ns        15586 ns        44894 bytes_per_second=9.78998M/s
-bench_romulus::romulusn_decrypt/32/128       15602 ns        15602 ns        44852 bytes_per_second=9.78013M/s
-bench_romulus::romulusn_encrypt/32/256       28018 ns        28018 ns        25000 bytes_per_second=9.80308M/s
-bench_romulus::romulusn_decrypt/32/256       28012 ns        28011 ns        24990 bytes_per_second=9.80525M/s
-bench_romulus::romulusn_encrypt/32/512       52882 ns        52881 ns        13239 bytes_per_second=9.81071M/s
-bench_romulus::romulusn_decrypt/32/512       52819 ns        52818 ns        13253 bytes_per_second=9.82244M/s
-bench_romulus::romulusn_encrypt/32/1024     102526 ns       102524 ns         6826 bytes_per_second=9.82286M/s
-bench_romulus::romulusn_decrypt/32/1024     102416 ns       102413 ns         6834 bytes_per_second=9.83348M/s
-bench_romulus::romulusn_encrypt/32/2048     201938 ns       201934 ns         3465 bytes_per_second=9.82322M/s
-bench_romulus::romulusn_decrypt/32/2048     201599 ns       201593 ns         3472 bytes_per_second=9.83985M/s
-bench_romulus::romulusn_encrypt/32/4096     400620 ns       400607 ns         1747 bytes_per_second=9.82701M/s
-bench_romulus::romulusn_decrypt/32/4096     399989 ns       399974 ns         1750 bytes_per_second=9.84255M/s
-bench_romulus::romulusm_encrypt/32/64        12552 ns        12552 ns        55777 bytes_per_second=7.29412M/s
-bench_romulus::romulusm_decrypt/32/64        12551 ns        12551 ns        55752 bytes_per_second=7.29456M/s
-bench_romulus::romulusm_encrypt/32/128       21917 ns        21916 ns        31939 bytes_per_second=6.96238M/s
-bench_romulus::romulusm_decrypt/32/128       21920 ns        21919 ns        31929 bytes_per_second=6.96131M/s
-bench_romulus::romulusm_encrypt/32/256       40661 ns        40660 ns        17216 bytes_per_second=6.75498M/s
-bench_romulus::romulusm_decrypt/32/256       40662 ns        40661 ns        17216 bytes_per_second=6.75482M/s
-bench_romulus::romulusm_encrypt/32/512       78126 ns        78124 ns         8959 bytes_per_second=6.64075M/s
-bench_romulus::romulusm_decrypt/32/512       78139 ns        78136 ns         8958 bytes_per_second=6.63967M/s
-bench_romulus::romulusm_encrypt/32/1024     153067 ns       153062 ns         4574 bytes_per_second=6.57956M/s
-bench_romulus::romulusm_decrypt/32/1024     153058 ns       153052 ns         4573 bytes_per_second=6.57998M/s
-bench_romulus::romulusm_encrypt/32/2048     302916 ns       302909 ns         2311 bytes_per_second=6.54863M/s
-bench_romulus::romulusm_decrypt/32/2048     302908 ns       302902 ns         2311 bytes_per_second=6.54879M/s
-bench_romulus::romulusm_encrypt/32/4096     602605 ns       602592 ns         1162 bytes_per_second=6.53306M/s
-bench_romulus::romulusm_decrypt/32/4096     602620 ns       602607 ns         1161 bytes_per_second=6.53289M/s
+bench_romulus::skinny_tbc                     1543 ns         1543 ns       453543 bytes_per_second=9.88907M/s
+bench_romulus::romulush/64                    9351 ns         9351 ns        74863 bytes_per_second=6.52742M/s
+bench_romulus::romulush/128                  15579 ns        15579 ns        44944 bytes_per_second=7.8357M/s
+bench_romulus::romulush/256                  28028 ns        28027 ns        24973 bytes_per_second=8.71086M/s
+bench_romulus::romulush/512                  52924 ns        52923 ns        13226 bytes_per_second=9.22629M/s
+bench_romulus::romulush/1024                102733 ns       102731 ns         6814 bytes_per_second=9.50602M/s
+bench_romulus::romulush/2048                202323 ns       202319 ns         3460 bytes_per_second=9.65371M/s
+bench_romulus::romulush/4096                401538 ns       401524 ns         1743 bytes_per_second=9.72856M/s
+bench_romulus::romulusn_encrypt/32/64         9398 ns         9398 ns        74482 bytes_per_second=9.74154M/s
+bench_romulus::romulusn_decrypt/32/64         9405 ns         9405 ns        74420 bytes_per_second=9.73467M/s
+bench_romulus::romulusn_encrypt/32/128       15622 ns        15622 ns        44812 bytes_per_second=9.76761M/s
+bench_romulus::romulusn_decrypt/32/128       15620 ns        15619 ns        44812 bytes_per_second=9.76908M/s
+bench_romulus::romulusn_encrypt/32/256       28042 ns        28042 ns        24957 bytes_per_second=9.79457M/s
+bench_romulus::romulusn_decrypt/32/256       28027 ns        28027 ns        24972 bytes_per_second=9.79982M/s
+bench_romulus::romulusn_encrypt/32/512       52903 ns        52902 ns        13232 bytes_per_second=9.80682M/s
+bench_romulus::romulusn_decrypt/32/512       52893 ns        52892 ns        13228 bytes_per_second=9.80862M/s
+bench_romulus::romulusn_encrypt/32/1024     102609 ns       102607 ns         6822 bytes_per_second=9.81497M/s
+bench_romulus::romulusn_decrypt/32/1024     102610 ns       102608 ns         6824 bytes_per_second=9.81485M/s
+bench_romulus::romulusn_encrypt/32/2048     202015 ns       202011 ns         3465 bytes_per_second=9.81949M/s
+bench_romulus::romulusn_decrypt/32/2048     201938 ns       201931 ns         3467 bytes_per_second=9.82339M/s
+bench_romulus::romulusn_encrypt/32/4096     400842 ns       400830 ns         1746 bytes_per_second=9.82154M/s
+bench_romulus::romulusn_decrypt/32/4096     400721 ns       400709 ns         1747 bytes_per_second=9.8245M/s
+bench_romulus::romulusm_encrypt/32/64        12563 ns        12563 ns        55710 bytes_per_second=7.28755M/s
+bench_romulus::romulusm_decrypt/32/64        12582 ns        12582 ns        55651 bytes_per_second=7.27665M/s
+bench_romulus::romulusm_encrypt/32/128       21930 ns        21930 ns        31922 bytes_per_second=6.95797M/s
+bench_romulus::romulusm_decrypt/32/128       21949 ns        21949 ns        31884 bytes_per_second=6.95199M/s
+bench_romulus::romulusm_encrypt/32/256       40650 ns        40649 ns        17222 bytes_per_second=6.75684M/s
+bench_romulus::romulusm_decrypt/32/256       40683 ns        40682 ns        17204 bytes_per_second=6.7514M/s
+bench_romulus::romulusm_encrypt/32/512       78080 ns        78078 ns         8964 bytes_per_second=6.64461M/s
+bench_romulus::romulusm_decrypt/32/512       78155 ns        78152 ns         8958 bytes_per_second=6.6383M/s
+bench_romulus::romulusm_encrypt/32/1024     152932 ns       152929 ns         4577 bytes_per_second=6.58528M/s
+bench_romulus::romulusm_decrypt/32/1024     153072 ns       153067 ns         4573 bytes_per_second=6.57932M/s
+bench_romulus::romulusm_encrypt/32/2048     302629 ns       302620 ns         2313 bytes_per_second=6.5549M/s
+bench_romulus::romulusm_decrypt/32/2048     302872 ns       302865 ns         2311 bytes_per_second=6.54959M/s
+bench_romulus::romulusm_encrypt/32/4096     601987 ns       601965 ns         1163 bytes_per_second=6.53986M/s
+bench_romulus::romulusm_decrypt/32/4096     602431 ns       602418 ns         1162 bytes_per_second=6.53495M/s
+bench_romulus::romulust_encrypt/32/64        29635 ns        29634 ns        23624 bytes_per_second=3.08943M/s
+bench_romulus::romulust_decrypt/32/64        29589 ns        29588 ns        23658 bytes_per_second=3.09426M/s
+bench_romulus::romulust_encrypt/32/128       48241 ns        48240 ns        14511 bytes_per_second=3.16311M/s
+bench_romulus::romulust_decrypt/32/128       48202 ns        48200 ns        14526 bytes_per_second=3.16572M/s
+bench_romulus::romulust_encrypt/32/256       85576 ns        85574 ns         8179 bytes_per_second=3.20959M/s
+bench_romulus::romulust_decrypt/32/256       85493 ns        85491 ns         8189 bytes_per_second=3.21273M/s
+bench_romulus::romulust_encrypt/32/512      160195 ns       160191 ns         4370 bytes_per_second=3.23862M/s
+bench_romulus::romulust_decrypt/32/512      160011 ns       160006 ns         4374 bytes_per_second=3.24238M/s
+bench_romulus::romulust_encrypt/32/1024     309410 ns       309402 ns         2262 bytes_per_second=3.25493M/s
+bench_romulus::romulust_decrypt/32/1024     309169 ns       309162 ns         2265 bytes_per_second=3.25745M/s
+bench_romulus::romulust_encrypt/32/2048     607777 ns       607764 ns         1152 bytes_per_second=3.26384M/s
+bench_romulus::romulust_decrypt/32/2048     607243 ns       607230 ns         1153 bytes_per_second=3.26671M/s
+bench_romulus::romulust_encrypt/32/4096    1204559 ns      1204511 ns          581 bytes_per_second=3.26835M/s
+bench_romulus::romulust_decrypt/32/4096    1203425 ns      1203391 ns          582 bytes_per_second=3.2714M/s
 ```
 
 ### On Intel(R) Core(TM) i5-8279U CPU @ 2.40GHz
 
 ```fish
-2022-08-19T16:48:01+04:00
+2022-08-21T23:32:44+04:00
 Running ./bench/a.out
 Run on (8 X 2400 MHz CPU s)
 CPU Caches:
@@ -224,44 +257,193 @@ CPU Caches:
   L1 Instruction 32 KiB
   L2 Unified 256 KiB (x4)
   L3 Unified 6144 KiB
-Load Average: 1.81, 1.61, 1.44
+Load Average: 2.25, 1.88, 1.65
 --------------------------------------------------------------------------------------------------
 Benchmark                                        Time             CPU   Iterations UserCounters...
 --------------------------------------------------------------------------------------------------
-bench_romulus::skinny_tbc                      527 ns          519 ns      1105321 bytes_per_second=29.3926M/s
-bench_romulus::romulush/64                    2946 ns         2939 ns       224047 bytes_per_second=20.7684M/s
-bench_romulus::romulush/128                   5052 ns         5009 ns       132498 bytes_per_second=24.3686M/s
-bench_romulus::romulush/256                   9666 ns         9552 ns        80816 bytes_per_second=25.5596M/s
-bench_romulus::romulush/512                  17837 ns        17685 ns        39321 bytes_per_second=27.61M/s
-bench_romulus::romulush/1024                 34904 ns        34484 ns        21419 bytes_per_second=28.3191M/s
-bench_romulus::romulush/2048                 63325 ns        63246 ns        11029 bytes_per_second=30.8814M/s
-bench_romulus::romulush/4096                133427 ns       132470 ns         4958 bytes_per_second=29.4877M/s
-bench_romulus::romulusn_encrypt/32/64         3380 ns         3344 ns       212037 bytes_per_second=27.3755M/s
-bench_romulus::romulusn_decrypt/32/64         3550 ns         3355 ns       221011 bytes_per_second=27.2856M/s
-bench_romulus::romulusn_encrypt/32/128        5088 ns         5086 ns       126683 bytes_per_second=30.0029M/s
-bench_romulus::romulusn_decrypt/32/128        5481 ns         5437 ns       128013 bytes_per_second=28.0665M/s
-bench_romulus::romulusn_encrypt/32/256        9527 ns         9479 ns        73234 bytes_per_second=28.9748M/s
-bench_romulus::romulusn_decrypt/32/256        9201 ns         9196 ns        75475 bytes_per_second=29.8678M/s
-bench_romulus::romulusn_encrypt/32/512       17270 ns        17264 ns        38737 bytes_per_second=30.0516M/s
-bench_romulus::romulusn_decrypt/32/512       17179 ns        17174 ns        40424 bytes_per_second=30.2091M/s
-bench_romulus::romulusn_encrypt/32/1024      33311 ns        33291 ns        20895 bytes_per_second=30.2505M/s
-bench_romulus::romulusn_decrypt/32/1024      33388 ns        33364 ns        20915 bytes_per_second=30.1845M/s
-bench_romulus::romulusn_encrypt/32/2048      66414 ns        66342 ns        10486 bytes_per_second=29.9004M/s
-bench_romulus::romulusn_decrypt/32/2048      65836 ns        65791 ns        10494 bytes_per_second=30.1506M/s
-bench_romulus::romulusn_encrypt/32/4096     130895 ns       130827 ns         5373 bytes_per_second=30.0913M/s
-bench_romulus::romulusn_decrypt/32/4096     130697 ns       130609 ns         5275 bytes_per_second=30.1416M/s
-bench_romulus::romulusm_encrypt/32/64         4137 ns         4134 ns       171531 bytes_per_second=22.1475M/s
-bench_romulus::romulusm_decrypt/32/64         4109 ns         4107 ns       171336 bytes_per_second=22.2913M/s
-bench_romulus::romulusm_encrypt/32/128        7204 ns         7196 ns        96456 bytes_per_second=21.204M/s
-bench_romulus::romulusm_decrypt/32/128        7208 ns         7203 ns        96258 bytes_per_second=21.1825M/s
-bench_romulus::romulusm_encrypt/32/256       14404 ns        14284 ns        52804 bytes_per_second=19.2278M/s
-bench_romulus::romulusm_decrypt/32/256       13976 ns        13838 ns        48482 bytes_per_second=19.8476M/s
-bench_romulus::romulusm_encrypt/32/512       26146 ns        26026 ns        25720 bytes_per_second=19.9342M/s
-bench_romulus::romulusm_decrypt/32/512       25769 ns        25687 ns        26271 bytes_per_second=20.197M/s
-bench_romulus::romulusm_encrypt/32/1024      50586 ns        50521 ns        13841 bytes_per_second=19.9338M/s
-bench_romulus::romulusm_decrypt/32/1024      49625 ns        49609 ns        13657 bytes_per_second=20.3004M/s
-bench_romulus::romulusm_encrypt/32/2048      98420 ns        98369 ns         7025 bytes_per_second=20.1653M/s
-bench_romulus::romulusm_decrypt/32/2048      97950 ns        97899 ns         6982 bytes_per_second=20.2621M/s
-bench_romulus::romulusm_encrypt/32/4096     195871 ns       195746 ns         3520 bytes_per_second=20.1116M/s
-bench_romulus::romulusm_decrypt/32/4096     194782 ns       194569 ns         3518 bytes_per_second=20.2333M/s
+bench_romulus::skinny_tbc                      476 ns          475 ns      1368711 bytes_per_second=32.1309M/s
+bench_romulus::romulush/64                    2927 ns         2916 ns       238275 bytes_per_second=20.9317M/s
+bench_romulus::romulush/128                   5090 ns         5068 ns       139565 bytes_per_second=24.0859M/s
+bench_romulus::romulush/256                   9085 ns         9055 ns        77301 bytes_per_second=26.9633M/s
+bench_romulus::romulush/512                  16565 ns        16544 ns        41289 bytes_per_second=29.5135M/s
+bench_romulus::romulush/1024                 34007 ns        33851 ns        21531 bytes_per_second=28.8488M/s
+bench_romulus::romulush/2048                 64136 ns        64003 ns        10035 bytes_per_second=30.5162M/s
+bench_romulus::romulush/4096                124405 ns       124000 ns         5596 bytes_per_second=31.502M/s
+bench_romulus::romulusn_encrypt/32/64         3135 ns         3125 ns       225454 bytes_per_second=29.2965M/s
+bench_romulus::romulusn_decrypt/32/64         3099 ns         3095 ns       225469 bytes_per_second=29.578M/s
+bench_romulus::romulusn_encrypt/32/128        5156 ns         5144 ns       131591 bytes_per_second=29.6641M/s
+bench_romulus::romulusn_decrypt/32/128        5166 ns         5153 ns       132895 bytes_per_second=29.6102M/s
+bench_romulus::romulusn_encrypt/32/256        9307 ns         9282 ns        74852 bytes_per_second=29.5906M/s
+bench_romulus::romulusn_decrypt/32/256        9222 ns         9211 ns        74298 bytes_per_second=29.8187M/s
+bench_romulus::romulusn_encrypt/32/512       17566 ns        17554 ns        39196 bytes_per_second=29.5553M/s
+bench_romulus::romulusn_decrypt/32/512       17491 ns        17440 ns        40160 bytes_per_second=29.748M/s
+bench_romulus::romulusn_encrypt/32/1024      33921 ns        33840 ns        20284 bytes_per_second=29.7601M/s
+bench_romulus::romulusn_decrypt/32/1024      33648 ns        33604 ns        20895 bytes_per_second=29.9686M/s
+bench_romulus::romulusn_encrypt/32/2048      67125 ns        66956 ns        10182 bytes_per_second=29.6263M/s
+bench_romulus::romulusn_decrypt/32/2048      66307 ns        66114 ns        10240 bytes_per_second=30.0032M/s
+bench_romulus::romulusn_encrypt/32/4096     132831 ns       132485 ns         5311 bytes_per_second=29.7149M/s
+bench_romulus::romulusn_decrypt/32/4096     132272 ns       132141 ns         5239 bytes_per_second=29.7922M/s
+bench_romulus::romulusm_encrypt/32/64         4131 ns         4120 ns       170206 bytes_per_second=22.2196M/s
+bench_romulus::romulusm_decrypt/32/64         4226 ns         4212 ns       169436 bytes_per_second=21.7369M/s
+bench_romulus::romulusm_encrypt/32/128        7366 ns         7341 ns        95785 bytes_per_second=20.7848M/s
+bench_romulus::romulusm_decrypt/32/128        7601 ns         7541 ns        94208 bytes_per_second=20.2347M/s
+bench_romulus::romulusm_encrypt/32/256       13282 ns        13270 ns        51038 bytes_per_second=20.6974M/s
+bench_romulus::romulusm_decrypt/32/256       13248 ns        13215 ns        52442 bytes_per_second=20.7844M/s
+bench_romulus::romulusm_encrypt/32/512       26086 ns        25944 ns        26184 bytes_per_second=19.997M/s
+bench_romulus::romulusm_decrypt/32/512       25469 ns        25408 ns        27044 bytes_per_second=20.4184M/s
+bench_romulus::romulusm_encrypt/32/1024      50556 ns        50340 ns        13247 bytes_per_second=20.0055M/s
+bench_romulus::romulusm_decrypt/32/1024      50956 ns        50667 ns        13645 bytes_per_second=19.8764M/s
+bench_romulus::romulusm_encrypt/32/2048      98750 ns        98671 ns         6921 bytes_per_second=20.1037M/s
+bench_romulus::romulusm_decrypt/32/2048      98626 ns        98358 ns         6937 bytes_per_second=20.1675M/s
+bench_romulus::romulusm_encrypt/32/4096     197203 ns       196711 ns         3557 bytes_per_second=20.0129M/s
+bench_romulus::romulusm_decrypt/32/4096     197363 ns       196823 ns         3517 bytes_per_second=20.0015M/s
+bench_romulus::romulust_encrypt/32/64         9333 ns         9306 ns        75202 bytes_per_second=9.8382M/s
+bench_romulus::romulust_decrypt/32/64         9292 ns         9270 ns        74761 bytes_per_second=9.87637M/s
+bench_romulus::romulust_encrypt/32/128       15281 ns        15263 ns        45300 bytes_per_second=9.99723M/s
+bench_romulus::romulust_decrypt/32/128       15139 ns        15126 ns        45444 bytes_per_second=10.0876M/s
+bench_romulus::romulust_encrypt/32/256       26896 ns        26854 ns        25612 bytes_per_second=10.2278M/s
+bench_romulus::romulust_decrypt/32/256       26667 ns        26650 ns        25819 bytes_per_second=10.3059M/s
+bench_romulus::romulust_encrypt/32/512       49917 ns        49801 ns        13530 bytes_per_second=10.4175M/s
+bench_romulus::romulust_decrypt/32/512       50775 ns        50624 ns        12693 bytes_per_second=10.248M/s
+bench_romulus::romulust_encrypt/32/1024      98957 ns        98588 ns         7151 bytes_per_second=10.2151M/s
+bench_romulus::romulust_decrypt/32/1024      96374 ns        96237 ns         6921 bytes_per_second=10.4646M/s
+bench_romulus::romulust_encrypt/32/2048     193526 ns       193312 ns         3566 bytes_per_second=10.2613M/s
+bench_romulus::romulust_decrypt/32/2048     192901 ns       192304 ns         3654 bytes_per_second=10.3152M/s
+bench_romulus::romulust_encrypt/32/4096     383525 ns       382952 ns         1851 bytes_per_second=10.28M/s
+bench_romulus::romulust_decrypt/32/4096     377523 ns       377248 ns         1864 bytes_per_second=10.4355M/s
+```
+
+### On Intel(R) Xeon(R) CPU E5-2686 v4 @ 2.30GHz
+
+```fish
+2022-08-21T19:39:46+00:00
+Running ./bench/a.out
+Run on (4 X 2300 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x2)
+  L1 Instruction 32 KiB (x2)
+  L2 Unified 256 KiB (x2)
+  L3 Unified 46080 KiB (x1)
+Load Average: 0.08, 0.02, 0.01
+--------------------------------------------------------------------------------------------------
+Benchmark                                        Time             CPU   Iterations UserCounters...
+--------------------------------------------------------------------------------------------------
+bench_romulus::skinny_tbc                     3143 ns         3143 ns       222686 bytes_per_second=4.85441M/s
+bench_romulus::romulush/64                   18996 ns        18995 ns        36851 bytes_per_second=3.21314M/s
+bench_romulus::romulush/128                  31642 ns        31642 ns        22122 bytes_per_second=3.85791M/s
+bench_romulus::romulush/256                  56897 ns        56895 ns        12300 bytes_per_second=4.29111M/s
+bench_romulus::romulush/512                 107381 ns       107380 ns         6518 bytes_per_second=4.54721M/s
+bench_romulus::romulush/1024                208420 ns       208416 ns         3358 bytes_per_second=4.68565M/s
+bench_romulus::romulush/2048                410526 ns       410523 ns         1705 bytes_per_second=4.75766M/s
+bench_romulus::romulush/4096                814683 ns       814658 ns          859 bytes_per_second=4.79496M/s
+bench_romulus::romulusn_encrypt/32/64        19006 ns        19006 ns        36833 bytes_per_second=4.81706M/s
+bench_romulus::romulusn_decrypt/32/64        19039 ns        19039 ns        36757 bytes_per_second=4.80866M/s
+bench_romulus::romulusn_encrypt/32/128       31660 ns        31659 ns        22117 bytes_per_second=4.81976M/s
+bench_romulus::romulusn_decrypt/32/128       31701 ns        31699 ns        22080 bytes_per_second=4.81358M/s
+bench_romulus::romulusn_encrypt/32/256       56972 ns        56971 ns        12289 bytes_per_second=4.82101M/s
+bench_romulus::romulusn_decrypt/32/256       56986 ns        56987 ns        12289 bytes_per_second=4.81971M/s
+bench_romulus::romulusn_encrypt/32/512      107505 ns       107502 ns         6511 bytes_per_second=4.82596M/s
+bench_romulus::romulusn_decrypt/32/512      107535 ns       107532 ns         6510 bytes_per_second=4.82459M/s
+bench_romulus::romulusn_encrypt/32/1024     209277 ns       209260 ns         3354 bytes_per_second=4.81257M/s
+bench_romulus::romulusn_decrypt/32/1024     209364 ns       209348 ns         3342 bytes_per_second=4.81056M/s
+bench_romulus::romulusn_encrypt/32/2048     411090 ns       411057 ns         1698 bytes_per_second=4.82571M/s
+bench_romulus::romulusn_decrypt/32/2048     410689 ns       410680 ns         1703 bytes_per_second=4.83014M/s
+bench_romulus::romulusn_encrypt/32/4096     814943 ns       814884 ns          859 bytes_per_second=4.83108M/s
+bench_romulus::romulusn_decrypt/32/4096     814826 ns       814806 ns          859 bytes_per_second=4.83154M/s
+bench_romulus::romulusm_encrypt/32/64        25431 ns        25431 ns        27538 bytes_per_second=3.60008M/s
+bench_romulus::romulusm_decrypt/32/64        25448 ns        25448 ns        27511 bytes_per_second=3.59765M/s
+bench_romulus::romulusm_encrypt/32/128       44474 ns        44472 ns        15731 bytes_per_second=3.43107M/s
+bench_romulus::romulusm_decrypt/32/128       44497 ns        44497 ns        15734 bytes_per_second=3.42917M/s
+bench_romulus::romulusm_encrypt/32/256       82512 ns        82507 ns         8484 bytes_per_second=3.3289M/s
+bench_romulus::romulusm_decrypt/32/256       82590 ns        82590 ns         8475 bytes_per_second=3.32557M/s
+bench_romulus::romulusm_encrypt/32/512      158574 ns       158573 ns         4409 bytes_per_second=3.27167M/s
+bench_romulus::romulusm_decrypt/32/512      158562 ns       158558 ns         4411 bytes_per_second=3.27199M/s
+bench_romulus::romulusm_encrypt/32/1024     310656 ns       310652 ns         2254 bytes_per_second=3.24182M/s
+bench_romulus::romulusm_decrypt/32/1024     310552 ns       310544 ns         2254 bytes_per_second=3.24295M/s
+bench_romulus::romulusm_encrypt/32/2048     615561 ns       615566 ns         1139 bytes_per_second=3.22247M/s
+bench_romulus::romulusm_decrypt/32/2048     615076 ns       615021 ns         1138 bytes_per_second=3.22533M/s
+bench_romulus::romulusm_encrypt/32/4096    1224294 ns      1224265 ns          571 bytes_per_second=3.21562M/s
+bench_romulus::romulusm_decrypt/32/4096    1223899 ns      1223872 ns          572 bytes_per_second=3.21665M/s
+bench_romulus::romulust_encrypt/32/64        60216 ns        60216 ns        11626 bytes_per_second=1.52042M/s
+bench_romulus::romulust_decrypt/32/64        60195 ns        60194 ns        11627 bytes_per_second=1.52096M/s
+bench_romulus::romulust_encrypt/32/128       98141 ns        98131 ns         7135 bytes_per_second=1.55494M/s
+bench_romulus::romulust_decrypt/32/128       98112 ns        98110 ns         7133 bytes_per_second=1.55528M/s
+bench_romulus::romulust_encrypt/32/256      173824 ns       173821 ns         4026 bytes_per_second=1.58012M/s
+bench_romulus::romulust_decrypt/32/256      173829 ns       173827 ns         4027 bytes_per_second=1.58006M/s
+bench_romulus::romulust_encrypt/32/512      325406 ns       325398 ns         2152 bytes_per_second=1.59435M/s
+bench_romulus::romulust_decrypt/32/512      325393 ns       325386 ns         2151 bytes_per_second=1.59441M/s
+bench_romulus::romulust_encrypt/32/1024     628542 ns       628547 ns         1114 bytes_per_second=1.60224M/s
+bench_romulus::romulust_decrypt/32/1024     628635 ns       628612 ns         1113 bytes_per_second=1.60207M/s
+bench_romulus::romulust_encrypt/32/2048    1235484 ns      1235460 ns          567 bytes_per_second=1.60559M/s
+bench_romulus::romulust_decrypt/32/2048    1235968 ns      1235876 ns          567 bytes_per_second=1.60505M/s
+bench_romulus::romulust_encrypt/32/4096    2448648 ns      2448638 ns          285 bytes_per_second=1.60774M/s
+bench_romulus::romulust_decrypt/32/4096    2450591 ns      2450409 ns          286 bytes_per_second=1.60658M/s
+```
+
+
+## Usage
+
+Using Romulus zero-dependency, header-only C++ library is as easy as 
+
+- Importing proper header files into your program
+- While compiling letting your compiler know where to find these header files
+
+Here, I implement all schemes described in Romulus cipher suite [specification](https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf)
+
+Scheme | Header File | Usage Example
+--- | --: | --:
+Romulus-H [only hash function] | [romulush.hpp](./include/romulush.hpp) | [romulush.cpp](./example/romulush.cpp)
+Romulus-N [nonce-based AEAD] | [romulusn.hpp](./include/romulusn.hpp) | [romulusn.cpp](./example/romulusn.cpp)
+Romulus-M [nonce misuse-resistant AEAD] | [romulusm.hpp](./include/romulusm.hpp) | [romulusm.cpp](./example/romulusm.cpp)
+Romulus-T [leakage-resistant AEAD] | [romulust.hpp](./include/romulust.hpp) | [romulust.cpp](./example/romulust.cpp)
+
+```fish
+$ g++ -Wall -std=c++20 -O3 -march=native -I include example/romulush.cpp && ./a.out
+
+Romulus-H Hash Function
+
+Message : f7f275dbee2bdcce51a5b1fa4adef0952293bef2f51425d05b840089fdeebe1dcb55b5f6f5e4da1bffb82dc2549f6588
+Digest  : 5ba00a78b4f946179499ee853e8300ec0a799609e5e133593590125def042cc1
+
+# ---
+
+$ g++ -Wall -std=c++20 -O3 -march=native -I include example/romulusn.cpp && ./a.out
+
+Romulus-N AEAD
+
+Key       : 7cda7580c0d74472051616717e92631e
+Nonce     : 4ef907b92b06e5e40c87ec6026be0823
+Tag       : fdeaf67a3f17b3555173fccc58f12548
+Data      : eded42cec7f92797582a17cdef1e19114fb46fe2a9241edf7c862064db663280
+Text      : 9e21f46ea6bed1ad200d60fb1015830ea49bbf01916f7fca60c7171065c25017
+Encrypted : d2594dcdfdf19934e1859b8943e5ea18fcdc3b6bea2067cfd2c6c0275ae8062a
+Decrypted : 9e21f46ea6bed1ad200d60fb1015830ea49bbf01916f7fca60c7171065c25017
+
+# ---
+
+$ g++ -Wall -std=c++20 -O3 -march=native -I include example/romulusm.cpp && ./a.out
+
+Romulus-M AEAD
+
+Key       : e0ea43631897c3c6d4da9659e34b9712
+Nonce     : 6e4670ac1ca9ae0879986967a3dfae78
+Tag       : 86cc2326ca767f3850180b0c3064e3eb
+Data      : e772443c46b3d8744f2714c52d5cb975c3aecbbae7b4de619ff930e6f2f8a558
+Text      : c06034b3d95a47e2f3724832dd7e8cf87657b88ae093012d31b6494d8034fafa
+Encrypted : 29265cc306baa1e83c144a1b266b21ddca7d904ea30b3fd42f9bbec1a039cafe
+Decrypted : c06034b3d95a47e2f3724832dd7e8cf87657b88ae093012d31b6494d8034fafa
+
+# ---
+
+$ g++ -Wall -std=c++20 -O3 -march=native -I include example/romulust.cpp && ./a.out
+
+Romulus-T AEAD
+
+Key       : 06278853ce440b61d4e6025ab9f47de2
+Nonce     : c7119cb178dea251d782cd7927d1f836
+Tag       : 37ccee0eed48da50b303c8a73df0dfa3
+Data      : 4f09b67515a88171dd0a5acae3068af1fdf354862876ca0948bbc2ebd480e1a6
+Text      : 20ea73a583171f763c9e7f4da52845f9ce8ae6f9a9a5d94c2e50a80d90c8d64d
+Encrypted : b37249398c9a718002aeda9f51b81e97fbf4871efe14b26b0d8156aa3bc14f7b
+Decrypted : 20ea73a583171f763c9e7f4da52845f9ce8ae6f9a9a5d94c2e50a80d90c8d64d
 ```
