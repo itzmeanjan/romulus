@@ -379,3 +379,71 @@ bench_romulus::romulust_decrypt/32/2048    1235968 ns      1235876 ns          5
 bench_romulus::romulust_encrypt/32/4096    2448648 ns      2448638 ns          285 bytes_per_second=1.60774M/s
 bench_romulus::romulust_decrypt/32/4096    2450591 ns      2450409 ns          286 bytes_per_second=1.60658M/s
 ```
+
+
+## Usage
+
+Using Romulus zero-dependency, header-only C++ library is as easy as 
+
+- Importing proper header files into your program
+- While compiling letting your compiler know where to find these header files
+
+Here, I implement all schemes described in Romulus cipher suite [specification](https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf)
+
+Scheme | Header File | Usage Example
+--- | --: | --:
+Romulus-H [only hash function] | [romulush.hpp](./include/romulush.hpp) | [romulush.cpp](./example/romulush.cpp)
+Romulus-N [nonce-based AEAD] | [romulusn.hpp](./include/romulusn.hpp) | [romulusn.cpp](./example/romulusn.cpp)
+Romulus-M [nonce misuse-resistant AEAD] | [romulusm.hpp](./include/romulusm.hpp) | [romulusm.cpp](./example/romulusm.cpp)
+Romulus-T [leakage-resistant AEAD] | [romulust.hpp](./include/romulust.hpp) | [romulust.cpp](./example/romulust.cpp)
+
+```fish
+$ g++ -Wall -std=c++20 -O3 -march=native -I include example/romulush.cpp && ./a.out
+
+Romulus-H Hash Function
+
+Message : f7f275dbee2bdcce51a5b1fa4adef0952293bef2f51425d05b840089fdeebe1dcb55b5f6f5e4da1bffb82dc2549f6588
+Digest  : 5ba00a78b4f946179499ee853e8300ec0a799609e5e133593590125def042cc1
+
+# ---
+
+$ g++ -Wall -std=c++20 -O3 -march=native -I include example/romulusn.cpp && ./a.out
+
+Romulus-N AEAD
+
+Key       : 7cda7580c0d74472051616717e92631e
+Nonce     : 4ef907b92b06e5e40c87ec6026be0823
+Tag       : fdeaf67a3f17b3555173fccc58f12548
+Data      : eded42cec7f92797582a17cdef1e19114fb46fe2a9241edf7c862064db663280
+Text      : 9e21f46ea6bed1ad200d60fb1015830ea49bbf01916f7fca60c7171065c25017
+Encrypted : d2594dcdfdf19934e1859b8943e5ea18fcdc3b6bea2067cfd2c6c0275ae8062a
+Decrypted : 9e21f46ea6bed1ad200d60fb1015830ea49bbf01916f7fca60c7171065c25017
+
+# ---
+
+$ g++ -Wall -std=c++20 -O3 -march=native -I include example/romulusm.cpp && ./a.out
+
+Romulus-M AEAD
+
+Key       : e0ea43631897c3c6d4da9659e34b9712
+Nonce     : 6e4670ac1ca9ae0879986967a3dfae78
+Tag       : 86cc2326ca767f3850180b0c3064e3eb
+Data      : e772443c46b3d8744f2714c52d5cb975c3aecbbae7b4de619ff930e6f2f8a558
+Text      : c06034b3d95a47e2f3724832dd7e8cf87657b88ae093012d31b6494d8034fafa
+Encrypted : 29265cc306baa1e83c144a1b266b21ddca7d904ea30b3fd42f9bbec1a039cafe
+Decrypted : c06034b3d95a47e2f3724832dd7e8cf87657b88ae093012d31b6494d8034fafa
+
+# ---
+
+$ g++ -Wall -std=c++20 -O3 -march=native -I include example/romulust.cpp && ./a.out
+
+Romulus-T AEAD
+
+Key       : 06278853ce440b61d4e6025ab9f47de2
+Nonce     : c7119cb178dea251d782cd7927d1f836
+Tag       : 37ccee0eed48da50b303c8a73df0dfa3
+Data      : 4f09b67515a88171dd0a5acae3068af1fdf354862876ca0948bbc2ebd480e1a6
+Text      : 20ea73a583171f763c9e7f4da52845f9ce8ae6f9a9a5d94c2e50a80d90c8d64d
+Encrypted : b37249398c9a718002aeda9f51b81e97fbf4871efe14b26b0d8156aa3bc14f7b
+Decrypted : 20ea73a583171f763c9e7f4da52845f9ce8ae6f9a9a5d94c2e50a80d90c8d64d
+```
