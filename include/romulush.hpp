@@ -15,28 +15,29 @@ inline static void compress(
     uint8_t* const __restrict right,     // 16 -bytes state
     const uint8_t* const __restrict msg  // 32 -bytes message to be compressed
 ) {
+  skinny::state_t st;
   uint8_t left_prime[16];
-  uint8_t key[48];
 
-  std::memcpy(key, right, 16);
-  std::memcpy(key + 16, msg, 32);
+  std::memcpy(st.arr + 0, left, 16);
+  std::memcpy(st.arr + 16, right, 16);
+  std::memcpy(st.arr + 32, msg, 32);
 
-  skinny::state st;
-
-  skinny::initialize(&st, left, key);
   skinny::tbc(&st);
 
   for (size_t i = 0; i < 16; i++) {
-    left_prime[i] = st.is[i] ^ left[i];
+    left_prime[i] = st.arr[i] ^ left[i];
   }
 
   left[0] ^= 0b00000001;
 
-  skinny::initialize(&st, left, key);
+  std::memcpy(st.arr + 0, left, 16);
+  std::memcpy(st.arr + 16, right, 16);
+  std::memcpy(st.arr + 32, msg, 32);
+
   skinny::tbc(&st);
 
   for (size_t i = 0; i < 16; i++) {
-    right[i] = st.is[i] ^ left[i];
+    right[i] = st.arr[i] ^ left[i];
   }
 
   std::memcpy(left, left_prime, 16);
