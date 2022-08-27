@@ -70,15 +70,12 @@ static void encrypt(
     const size_t ctlen,                     // len(text) = len(cipher) | >= 0
     uint8_t* const __restrict tag           // 128 -bit authentication tag
 ) {
-  uint8_t state[16];
+  skinny::state_t st;
+
   uint8_t lfsr[7];
-
   uint8_t enc[16];
-  uint8_t tweakey[48];
 
-  skinny::state st;
-
-  std::memset(state, 0, 16);
+  std::memset(st.arr, 0, 16);
   romulus_common::set_lfsr(lfsr);
 
   {
@@ -111,19 +108,15 @@ static void encrypt(
     for (size_t i = 0; i < half_blk_cnt; i++) {
       get_auth_block(data, dlen, text, ctlen, (i << 1) ^ 0ul, blk);
 
-      romulus_common::rho(state, blk, enc);
+      romulus_common::rho(st.arr, blk, enc);
       romulus_common::update_lfsr(lfsr);
 
       x ^= 4 * (i == half_ad_blk_cnt);
 
       get_auth_block(data, dlen, text, ctlen, (i << 1) ^ 1ul, blk);
-      romulus_common::encode(key, blk, lfsr, x, tweakey);
+      romulus_common::encode(key, blk, lfsr, x, st.arr + 16);
 
-      skinny::initialize(&st, state, tweakey);
       skinny::tbc(&st);
-
-      std::memcpy(state, st.is, 16);
-
       romulus_common::update_lfsr(lfsr);
     }
 
@@ -136,29 +129,26 @@ static void encrypt(
       get_auth_block(data, dlen, text, ctlen, tot_blk_cnt - 1, blk);
     }
 
-    romulus_common::rho(state, blk, enc);
+    romulus_common::rho(st.arr, blk, enc);
 
     if (tot_blk_cnt > (half_blk_cnt << 1)) {
       romulus_common::update_lfsr(lfsr);
     }
 
-    romulus_common::encode(key, nonce, lfsr, w, tweakey);
+    romulus_common::encode(key, nonce, lfsr, w, st.arr + 16);
 
-    skinny::initialize(&st, state, tweakey);
     skinny::tbc(&st);
-
-    std::memcpy(state, st.is, 16);
   }
 
   uint8_t tmp[16]{};
   std::memset(tmp, 0, 16);
 
-  romulus_common::rho(state, tmp, tag);
+  romulus_common::rho(st.arr, tmp, tag);
 
   if (ctlen > 0ul) {
     romulus_common::set_lfsr(lfsr);
 
-    std::memcpy(state, tag, 16);
+    std::memcpy(st.arr, tag, 16);
 
     const size_t blk_cnt = ctlen >> 4;
     const size_t rm_bytes = ctlen & 15ul;
@@ -169,14 +159,11 @@ static void encrypt(
     size_t off = 0ul;
 
     for (size_t i = 0; i < tot_blk_cnt - 1; i++) {
-      romulus_common::encode(key, nonce, lfsr, 36, tweakey);
+      romulus_common::encode(key, nonce, lfsr, 36, st.arr + 16);
 
-      skinny::initialize(&st, state, tweakey);
       skinny::tbc(&st);
 
-      std::memcpy(state, st.is, 16);
-
-      romulus_common::rho(state, text + off, cipher + off);
+      romulus_common::rho(st.arr, text + off, cipher + off);
       romulus_common::update_lfsr(lfsr);
 
       off += 16;
@@ -192,14 +179,11 @@ static void encrypt(
     const uint8_t br[]{blk[15], static_cast<uint8_t>(read)};
     blk[15] = br[read < 16ul];
 
-    romulus_common::encode(key, nonce, lfsr, 36, tweakey);
+    romulus_common::encode(key, nonce, lfsr, 36, st.arr + 16);
 
-    skinny::initialize(&st, state, tweakey);
     skinny::tbc(&st);
 
-    std::memcpy(state, st.is, 16);
-
-    romulus_common::rho(state, blk, enc);
+    romulus_common::rho(st.arr, blk, enc);
     std::memcpy(cipher + off, enc, read);
   }
 }
@@ -221,18 +205,15 @@ static bool decrypt(
     uint8_t* const __restrict text,          // M -bytes decrypted text
     const size_t ctlen                       // len(text) = len(cipher) | >= 0
 ) {
-  uint8_t state[16];
+  skinny::state_t st;
+
   uint8_t lfsr[7];
-
   uint8_t enc[16];
-  uint8_t tweakey[48];
-
-  skinny::state st;
 
   if (ctlen > 0ul) {
     romulus_common::set_lfsr(lfsr);
 
-    std::memcpy(state, tag, 16);
+    std::memcpy(st.arr, tag, 16);
 
     const size_t blk_cnt = ctlen >> 4;
     const size_t rm_bytes = ctlen & 15ul;
@@ -243,14 +224,11 @@ static bool decrypt(
     size_t off = 0ul;
 
     for (size_t i = 0; i < tot_blk_cnt - 1; i++) {
-      romulus_common::encode(key, nonce, lfsr, 36, tweakey);
+      romulus_common::encode(key, nonce, lfsr, 36, st.arr + 16);
 
-      skinny::initialize(&st, state, tweakey);
       skinny::tbc(&st);
 
-      std::memcpy(state, st.is, 16);
-
-      romulus_common::rho_inv(state, cipher + off, text + off);
+      romulus_common::rho_inv(st.arr, cipher + off, text + off);
       romulus_common::update_lfsr(lfsr);
 
       off += 16;
@@ -266,19 +244,16 @@ static bool decrypt(
     const uint8_t br[]{blk[15], static_cast<uint8_t>(read)};
     blk[15] = br[read < 16ul];
 
-    romulus_common::encode(key, nonce, lfsr, 36, tweakey);
+    romulus_common::encode(key, nonce, lfsr, 36, st.arr + 16);
 
-    skinny::initialize(&st, state, tweakey);
     skinny::tbc(&st);
 
-    std::memcpy(state, st.is, 16);
-
-    romulus_common::rho_inv(state, blk, enc);
+    romulus_common::rho_inv(st.arr, blk, enc);
     std::memcpy(text + off, enc, read);
   }
 
   {
-    std::memset(state, 0, 16);
+    std::memset(st.arr, 0, 16);
     romulus_common::set_lfsr(lfsr);
 
     const size_t ad_blk_cnt = dlen >> 4;
@@ -310,19 +285,15 @@ static bool decrypt(
     for (size_t i = 0; i < half_blk_cnt; i++) {
       get_auth_block(data, dlen, text, ctlen, (i << 1) ^ 0ul, blk);
 
-      romulus_common::rho(state, blk, enc);
+      romulus_common::rho(st.arr, blk, enc);
       romulus_common::update_lfsr(lfsr);
 
       x ^= 4 * (i == half_ad_blk_cnt);
 
       get_auth_block(data, dlen, text, ctlen, (i << 1) ^ 1ul, blk);
-      romulus_common::encode(key, blk, lfsr, x, tweakey);
+      romulus_common::encode(key, blk, lfsr, x, st.arr + 16);
 
-      skinny::initialize(&st, state, tweakey);
       skinny::tbc(&st);
-
-      std::memcpy(state, st.is, 16);
-
       romulus_common::update_lfsr(lfsr);
     }
 
@@ -335,18 +306,15 @@ static bool decrypt(
       get_auth_block(data, dlen, text, ctlen, tot_blk_cnt - 1, blk);
     }
 
-    romulus_common::rho(state, blk, enc);
+    romulus_common::rho(st.arr, blk, enc);
 
     if (tot_blk_cnt > (half_blk_cnt << 1)) {
       romulus_common::update_lfsr(lfsr);
     }
 
-    romulus_common::encode(key, nonce, lfsr, w, tweakey);
+    romulus_common::encode(key, nonce, lfsr, w, st.arr + 16);
 
-    skinny::initialize(&st, state, tweakey);
     skinny::tbc(&st);
-
-    std::memcpy(state, st.is, 16);
   }
 
   uint8_t tmp[16]{};
@@ -355,7 +323,7 @@ static bool decrypt(
   std::memset(tmp, 0, 16);
   std::memset(tag_, 0, 16);
 
-  romulus_common::rho(state, tmp, tag_);
+  romulus_common::rho(st.arr, tmp, tag_);
 
   bool flg = false;
   for (size_t i = 0; i < 16; i++) {
