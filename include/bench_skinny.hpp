@@ -18,7 +18,7 @@ static void skinny_tbc(benchmark::State& state) {
   random_data(txt, N);
   random_data(key, T);
 
-  skinny::state st;
+  skinny::state_t st;
   skinny::initialize(&st, txt, key);
 
   for (auto _ : state) {
