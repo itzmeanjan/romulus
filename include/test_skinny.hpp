@@ -20,12 +20,12 @@ static void skinny_tbc() {
   constexpr uint8_t cipher[16] = {255, 56,  209, 210, 76, 134, 76,  67,
                                   82,  168, 83,  105, 15, 227, 110, 94};
 
-  skinny::state st;
+  skinny::state_t st;
   skinny::initialize(&st, txt, tweakey);
   skinny::tbc(&st);
 
   for (size_t i = 0; i < 16; i++) {
-    assert((cipher[i] ^ st.is[i]) == 0);
+    assert((cipher[i] ^ st.arr[i]) == 0);
   }
 }
 
