@@ -137,7 +137,7 @@ static void encrypt(
   uint8_t lfsr[7];
   uint8_t tweakey[48];
 
-  skinny::state st;
+  skinny::state_t st;
 
   const size_t blk_cnt = ctlen >> 4;
   const size_t rm_bytes = ctlen & 15ul;
@@ -156,7 +156,7 @@ static void encrypt(
     skinny::initialize(&st, nonce, tweakey);
     skinny::tbc(&st);
 
-    std::memcpy(state, st.is, 16);
+    std::memcpy(state, st.arr, 16);
 
     romulus_common::set_lfsr(lfsr);
 
@@ -169,7 +169,7 @@ static void encrypt(
       skinny::tbc(&st);
 
       for (size_t j = 0; j < 16; j++) {
-        cipher[off + j] = text[off + j] ^ st.is[j];
+        cipher[off + j] = text[off + j] ^ st.arr[j];
       }
 
       romulus_common::encode(state, blk, lfsr, 65, tweakey);
@@ -177,7 +177,7 @@ static void encrypt(
       skinny::initialize(&st, nonce, tweakey);
       skinny::tbc(&st);
 
-      std::memcpy(state, st.is, 16);
+      std::memcpy(state, st.arr, 16);
 
       off += 16ul;
       romulus_common::update_lfsr(lfsr);
@@ -191,7 +191,7 @@ static void encrypt(
     const size_t read = ctlen - off;
 
     for (size_t i = 0; i < read; i++) {
-      cipher[off + i] = text[off + i] ^ st.is[i];
+      cipher[off + i] = text[off + i] ^ st.arr[i];
     }
   }
 
@@ -246,7 +246,7 @@ static void encrypt(
     skinny::initialize(&st, left, tweakey);
     skinny::tbc(&st);
 
-    std::memcpy(tag, st.is, 16);
+    std::memcpy(tag, st.arr, 16);
   }
 }
 
@@ -269,7 +269,7 @@ static bool decrypt(const uint8_t* const __restrict key,
   uint8_t lfsr[7];
   uint8_t tweakey[48];
 
-  skinny::state st;
+  skinny::state_t st;
 
   const size_t blk_cnt = ctlen >> 4;
   const size_t rm_bytes = ctlen & 15ul;
@@ -328,7 +328,7 @@ static bool decrypt(const uint8_t* const __restrict key,
     skinny::initialize(&st, left, tweakey);
     skinny::tbc(&st);
 
-    std::memcpy(tag_, st.is, 16);
+    std::memcpy(tag_, st.arr, 16);
   }
 
   bool flg1 = false;
@@ -348,7 +348,7 @@ static bool decrypt(const uint8_t* const __restrict key,
     skinny::initialize(&st, nonce, tweakey);
     skinny::tbc(&st);
 
-    std::memcpy(state, st.is, 16);
+    std::memcpy(state, st.arr, 16);
 
     romulus_common::set_lfsr(lfsr);
 
@@ -361,7 +361,7 @@ static bool decrypt(const uint8_t* const __restrict key,
       skinny::tbc(&st);
 
       for (size_t j = 0; j < 16; j++) {
-        text[off + j] = cipher[off + j] ^ st.is[j];
+        text[off + j] = cipher[off + j] ^ st.arr[j];
       }
 
       romulus_common::encode(state, blk, lfsr, 65, tweakey);
@@ -369,7 +369,7 @@ static bool decrypt(const uint8_t* const __restrict key,
       skinny::initialize(&st, nonce, tweakey);
       skinny::tbc(&st);
 
-      std::memcpy(state, st.is, 16);
+      std::memcpy(state, st.arr, 16);
 
       off += 16ul;
       romulus_common::update_lfsr(lfsr);
@@ -383,7 +383,7 @@ static bool decrypt(const uint8_t* const __restrict key,
     const size_t read = ctlen - off;
 
     for (size_t i = 0; i < read; i++) {
-      text[off + i] = cipher[off + i] ^ st.is[i];
+      text[off + i] = cipher[off + i] ^ st.arr[i];
     }
   }
 

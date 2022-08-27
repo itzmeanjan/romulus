@@ -59,15 +59,13 @@ constexpr uint8_t P_T[16] = {9, 15, 8, 13, 10, 14, 12, 11,
 
 // Skinny-128-384+ tweakable block cipher ( TBC ) state, where both internal
 // state of 128 -bit & tweakey state of 384 -bit are maintained as four 4x4 byte
-// matrices
+// matrices, using statically allocated 64 -bytes contiguous memory ( read array
+// )
 //
 // See section 2.3 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-struct state {
-  uint8_t is[16];   // 128 -bit internal state
-  uint8_t tk1[16];  // first 128 -bit of 384 -bit tweakey state
-  uint8_t tk2[16];  // middle 128 -bit of 384 -bit tweakey state
-  uint8_t tk3[16];  // last 128 -bit of 384 -bit tweakey state
+struct state_t {
+  uint8_t arr[64];  // 128 -bit internal state + 384 -bit tweakey state
 };
 
 // Initialize both internal state and tweakey state of Skinny-128-384+ TBC
@@ -75,24 +73,21 @@ struct state {
 // See section 2.3 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
 inline static void initialize(
-    state* const __restrict st,              // TBC state
+    state_t* const __restrict st,            // TBC state
     const uint8_t* const __restrict p_txt,   // 16 -bytes plain text
     const uint8_t* const __restrict tweakey  // 48 -bytes tweakey input
 ) {
-  std::memcpy(st->is, p_txt, 16);
-
-  std::memcpy(st->tk1, tweakey + 0, 16);
-  std::memcpy(st->tk2, tweakey + 16, 16);
-  std::memcpy(st->tk3, tweakey + 32, 16);
+  std::memcpy(st->arr + 0, p_txt, 16);
+  std::memcpy(st->arr + 16, tweakey, 48);
 }
 
 // Substitutes cells of TBC internal state by applying 8 -bit Sbox
 //
 // See section 2.3 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-inline static void sub_cells(state* const __restrict st) {
+inline static void sub_cells(state_t* const __restrict st) {
   for (size_t i = 0; i < 16; i++) {
-    st->is[i] = S8[st->is[i]];
+    st->arr[i] = S8[st->arr[i]];
   }
 }
 
@@ -101,15 +96,15 @@ inline static void sub_cells(state* const __restrict st) {
 // See definition of `AddConstants` routine in section 2.3 of Romulus
 // specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-inline static void add_constants(state* const __restrict st,
+inline static void add_constants(state_t* const __restrict st,
                                  const size_t r_idx) {
   const uint8_t c0 = RC[r_idx] & 0x0f;
   const uint8_t c1 = (RC[r_idx] >> 4) & 0b11;
   constexpr uint8_t c2 = 0x02;
 
-  st->is[0] ^= c0;
-  st->is[4] ^= c1;
-  st->is[8] ^= c2;
+  st->arr[0] ^= c0;
+  st->arr[4] ^= c1;
+  st->arr[8] ^= c2;
 }
 
 // LFSR used to update each cell of first two rows of tweakey state (2)
@@ -141,34 +136,34 @@ inline static uint8_t tk3_lfsr(const uint8_t cell) {
 // See definition of `AddRoundTweakey` routine in section 2.3 of Romulus
 // specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-inline static void add_round_tweakey(state* const __restrict st) {
+inline static void add_round_tweakey(state_t* const __restrict st) {
   for (size_t i = 0; i < 8; i++) {
-    st->is[i] ^= (st->tk1[i] ^ st->tk2[i] ^ st->tk3[i]);
+    st->arr[i] ^= (st->arr[16 + i] ^ st->arr[32 + i] ^ st->arr[48 + i]);
   }
 
   uint8_t tmp[16];
 
   for (size_t i = 0; i < 16; i++) {
-    tmp[i] = st->tk1[P_T[i]];
+    tmp[i] = st->arr[16 + P_T[i]];
   }
-  std::memcpy(st->tk1, tmp, 16);
+  std::memcpy(st->arr + 16, tmp, 16);
 
   for (size_t i = 0; i < 16; i++) {
-    tmp[i] = st->tk2[P_T[i]];
+    tmp[i] = st->arr[32 + P_T[i]];
   }
-  std::memcpy(st->tk2, tmp, 16);
+  std::memcpy(st->arr + 32, tmp, 16);
 
   for (size_t i = 0; i < 16; i++) {
-    tmp[i] = st->tk3[P_T[i]];
+    tmp[i] = st->arr[48 + P_T[i]];
   }
-  std::memcpy(st->tk3, tmp, 16);
+  std::memcpy(st->arr + 48, tmp, 16);
 
   for (size_t i = 0; i < 8; i++) {
-    st->tk2[i] = tk2_lfsr(st->tk2[i]);
+    st->arr[32 + i] = tk2_lfsr(st->arr[32 + i]);
   }
 
   for (size_t i = 0; i < 8; i++) {
-    st->tk3[i] = tk3_lfsr(st->tk3[i]);
+    st->arr[48 + i] = tk3_lfsr(st->arr[48 + i]);
   }
 }
 
@@ -177,70 +172,70 @@ inline static void add_round_tweakey(state* const __restrict st) {
 //
 // See definition of `ShiftRows` routine in section 2.3 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-static inline void shift_rows(state* const __restrict st) {
+static inline void shift_rows(state_t* const __restrict st) {
   uint8_t tmp[4];
 
   for (size_t i = 0; i < 4; i++) {
-    tmp[i] = st->is[4 ^ (((4 ^ i) + 3) & 3)];
+    tmp[i] = st->arr[4 ^ (((4 ^ i) + 3) & 3)];
   }
-  std::memcpy(st->is + 4, tmp, 4);
+  std::memcpy(st->arr + 4, tmp, 4);
 
   for (size_t i = 0; i < 4; i++) {
-    tmp[i] = st->is[8 ^ (((8 ^ i) + 2) & 3)];
+    tmp[i] = st->arr[8 ^ (((8 ^ i) + 2) & 3)];
   }
-  std::memcpy(st->is + 8, tmp, 4);
+  std::memcpy(st->arr + 8, tmp, 4);
 
   for (size_t i = 0; i < 4; i++) {
-    tmp[i] = st->is[12 ^ (((12 ^ i) + 1) & 3)];
+    tmp[i] = st->arr[12 ^ (((12 ^ i) + 1) & 3)];
   }
-  std::memcpy(st->is + 12, tmp, 4);
+  std::memcpy(st->arr + 12, tmp, 4);
 }
 
 // Multiply each column ( dimension 4x1 ) of internal state array with binary
 // matrix M, as defined in section 2.3 of Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-static inline void mix_columns(state* const __restrict st) {
+static inline void mix_columns(state_t* const __restrict st) {
   uint8_t tmp[4];
 
   for (size_t i = 0; i < 4; i++) {
-    tmp[i] = st->is[(i << 2) ^ 0];
+    tmp[i] = st->arr[(i << 2) ^ 0];
   }
 
-  st->is[0] = tmp[0] ^ tmp[2] ^ tmp[3];
-  st->is[4] = tmp[0];
-  st->is[8] = tmp[1] ^ tmp[2];
-  st->is[12] = tmp[0] ^ tmp[2];
+  st->arr[0] = tmp[0] ^ tmp[2] ^ tmp[3];
+  st->arr[4] = tmp[0];
+  st->arr[8] = tmp[1] ^ tmp[2];
+  st->arr[12] = tmp[0] ^ tmp[2];
 
   for (size_t i = 0; i < 4; i++) {
-    tmp[i] = st->is[(i << 2) ^ 1];
+    tmp[i] = st->arr[(i << 2) ^ 1];
   }
 
-  st->is[1] = tmp[0] ^ tmp[2] ^ tmp[3];
-  st->is[5] = tmp[0];
-  st->is[9] = tmp[1] ^ tmp[2];
-  st->is[13] = tmp[0] ^ tmp[2];
+  st->arr[1] = tmp[0] ^ tmp[2] ^ tmp[3];
+  st->arr[5] = tmp[0];
+  st->arr[9] = tmp[1] ^ tmp[2];
+  st->arr[13] = tmp[0] ^ tmp[2];
 
   for (size_t i = 0; i < 4; i++) {
-    tmp[i] = st->is[(i << 2) ^ 2];
+    tmp[i] = st->arr[(i << 2) ^ 2];
   }
 
-  st->is[2] = tmp[0] ^ tmp[2] ^ tmp[3];
-  st->is[6] = tmp[0];
-  st->is[10] = tmp[1] ^ tmp[2];
-  st->is[14] = tmp[0] ^ tmp[2];
+  st->arr[2] = tmp[0] ^ tmp[2] ^ tmp[3];
+  st->arr[6] = tmp[0];
+  st->arr[10] = tmp[1] ^ tmp[2];
+  st->arr[14] = tmp[0] ^ tmp[2];
 
   for (size_t i = 0; i < 4; i++) {
-    tmp[i] = st->is[(i << 2) ^ 3];
+    tmp[i] = st->arr[(i << 2) ^ 3];
   }
 
-  st->is[3] = tmp[0] ^ tmp[2] ^ tmp[3];
-  st->is[7] = tmp[0];
-  st->is[11] = tmp[1] ^ tmp[2];
-  st->is[15] = tmp[0] ^ tmp[2];
+  st->arr[3] = tmp[0] ^ tmp[2] ^ tmp[3];
+  st->arr[7] = tmp[0];
+  st->arr[11] = tmp[1] ^ tmp[2];
+  st->arr[15] = tmp[0] ^ tmp[2];
 }
 
 // A single round of Skinny-128-384+ tweakable block cipher
-inline static void round(state* const __restrict st, const size_t r_idx) {
+inline static void round(state_t* const __restrict st, const size_t r_idx) {
   sub_cells(st);
   add_constants(st, r_idx);
   add_round_tweakey(st);
@@ -251,7 +246,7 @@ inline static void round(state* const __restrict st, const size_t r_idx) {
 // Skinny-128-384+ tweakable block cipher with 40 rounds, see section 2.3 of
 // Romulus specification
 // https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/romulus-spec-final.pdf
-inline static void tbc(state* const __restrict st) {
+inline static void tbc(state_t* const __restrict st) {
   for (size_t i = 0; i < ROUNDS; i++) {
     round(st, i);
   }
